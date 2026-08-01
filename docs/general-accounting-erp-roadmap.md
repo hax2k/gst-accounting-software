@@ -1,6 +1,8 @@
 # General Accounting Software Roadmap: BUSY-Like GST ERP
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Long-form product roadmap. Steps use checkbox (`- [ ]`) syntax so they can be
+> picked up one at a time. Statuses are point-in-time — verify against the code
+> before starting on something marked "Done".
 
 **Goal:** Build a general Indian accounting, GST, inventory, purchase, sales, and business operations SaaS that can support any normal business, while using the wholesale fabric business as the first real validation customer.
 

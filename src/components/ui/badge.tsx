@@ -16,6 +16,15 @@ const badgeVariants = cva(
         success: 'bg-success text-success-foreground [a]:hover:bg-success/80',
         warning: 'bg-warning text-warning-foreground [a]:hover:bg-warning/80',
         info: 'bg-info text-info-foreground [a]:hover:bg-info/80',
+        'money-in':
+          'bg-money-in/15 text-money-in [a]:hover:bg-money-in/25 dark:bg-money-in/20',
+        'money-out':
+          'bg-money-out/15 text-money-out [a]:hover:bg-money-out/25 dark:bg-money-out/20',
+        gst: 'bg-gst/15 text-gst [a]:hover:bg-gst/25 dark:bg-gst/20',
+        inventory:
+          'bg-inventory/15 text-inventory [a]:hover:bg-inventory/25 dark:bg-inventory/20',
+        banking:
+          'bg-banking/15 text-banking [a]:hover:bg-banking/25 dark:bg-banking/20',
         neutral:
           'bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80',
         destructive:

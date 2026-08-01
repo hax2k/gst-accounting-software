@@ -130,39 +130,84 @@ export function PaymentsPanel() {
       return
     }
 
+    // Optimistic UI: reflect the allocation in the list immediately so the
+    // dialog can close without waiting on the round-trip. Rolled back on
+    // error; reconciled with the server via invalidateQueries on success.
+    let nextOutstanding = ''
+    let nextStatus: 'Paid' | 'Part paid' | 'Pending' = 'Pending'
+    if (selectedDoc) {
+      nextOutstanding = (
+        Number(selectedDoc.outstandingAmount) - Number(paymentAmount)
+      ).toFixed(2)
+      nextStatus =
+        Number(nextOutstanding) <= 0
+          ? 'Paid'
+          : nextOutstanding === selectedDoc.totalAmount
+            ? 'Pending'
+            : 'Part paid'
+    }
+    setOpen(false)
+
     try {
       if (mode === 'receipts') {
         if (!ledgerBySystemKey.cash || !ledgerBySystemKey.customer_receivable) {
           throw new Error('Cash / receivable ledgers missing')
         }
-        await allocateReceipt.mutateAsync({
-          companyId,
-          invoiceId: selectedDocumentId,
-          amount: paymentAmount,
-          receiptDate: date,
-          cashAccountId: ledgerBySystemKey.cash,
-          receivableAccountId: ledgerBySystemKey.customer_receivable,
-        })
-        await queryClient.invalidateQueries({
-          queryKey: trpc.sales.list.queryKey({ companyId }),
-        })
+        const queryKey = trpc.sales.list.queryKey({ companyId })
+        const previousRows = queryClient.getQueryData(queryKey)
+        if (selectedDoc) {
+          queryClient.setQueryData(queryKey, (rows) =>
+            rows?.map((row) =>
+              row.id === selectedDocumentId
+                ? { ...row, outstandingAmount: nextOutstanding, paymentStatus: nextStatus }
+                : row,
+            ),
+          )
+        }
+        try {
+          await allocateReceipt.mutateAsync({
+            companyId,
+            invoiceId: selectedDocumentId,
+            amount: paymentAmount,
+            receiptDate: date,
+            cashAccountId: ledgerBySystemKey.cash,
+            receivableAccountId: ledgerBySystemKey.customer_receivable,
+          })
+          await queryClient.invalidateQueries({ queryKey })
+        } catch (err) {
+          queryClient.setQueryData(queryKey, previousRows)
+          throw err
+        }
       } else {
         if (!ledgerBySystemKey.cash || !ledgerBySystemKey.supplier_payable) {
           throw new Error('Cash / payable ledgers missing')
         }
-        await allocatePayment.mutateAsync({
-          companyId,
-          purchaseBillId: selectedDocumentId,
-          amount: paymentAmount,
-          paymentDate: date,
-          cashAccountId: ledgerBySystemKey.cash,
-          payableAccountId: ledgerBySystemKey.supplier_payable,
-        })
-        await queryClient.invalidateQueries({
-          queryKey: trpc.purchases.list.queryKey({ companyId }),
-        })
+        const queryKey = trpc.purchases.list.queryKey({ companyId })
+        const previousRows = queryClient.getQueryData(queryKey)
+        if (selectedDoc) {
+          queryClient.setQueryData(queryKey, (rows) =>
+            rows?.map((row) =>
+              row.id === selectedDocumentId
+                ? { ...row, outstandingAmount: nextOutstanding, paymentStatus: nextStatus }
+                : row,
+            ),
+          )
+        }
+        try {
+          await allocatePayment.mutateAsync({
+            companyId,
+            purchaseBillId: selectedDocumentId,
+            amount: paymentAmount,
+            paymentDate: date,
+            cashAccountId: ledgerBySystemKey.cash,
+            payableAccountId: ledgerBySystemKey.supplier_payable,
+          })
+          await queryClient.invalidateQueries({ queryKey })
+        } catch (err) {
+          queryClient.setQueryData(queryKey, previousRows)
+          throw err
+        }
       }
-      setOpen(false)
       setDocumentId('')
       setAmount('')
       toast.success(mode === 'receipts' ? 'Receipt posted' : 'Payment posted')
@@ -308,7 +353,9 @@ export function PaymentsPanel() {
                       </TableCell>
                       <TableCell>{partyName(row.customerId)}</TableCell>
                       <TableCell>{formatInr(row.totalAmount)}</TableCell>
-                      <TableCell>{formatInr(row.outstandingAmount)}</TableCell>
+                      <TableCell className="font-medium text-money-in">
+                        {formatInr(row.outstandingAmount)}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={paymentStatusBadgeIntent(row.paymentStatus)}
@@ -325,7 +372,9 @@ export function PaymentsPanel() {
                       </TableCell>
                       <TableCell>{partyName(row.supplierId)}</TableCell>
                       <TableCell>{formatInr(row.totalAmount)}</TableCell>
-                      <TableCell>{formatInr(row.outstandingAmount)}</TableCell>
+                      <TableCell className="font-medium text-money-out">
+                        {formatInr(row.outstandingAmount)}
+                      </TableCell>
                       <TableCell>
                         <Badge
                           variant={paymentStatusBadgeIntent(row.paymentStatus)}

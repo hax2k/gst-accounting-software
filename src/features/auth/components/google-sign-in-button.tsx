@@ -10,10 +10,16 @@ export function GoogleSignInButton({ label }: { label: string }) {
   async function handleGoogle() {
     setIsPending(true)
     try {
-      await authClient.signIn.social({
+      // Resolves with `error` rather than throwing when the provider is not
+      // configured, which is the default state of a fresh clone.
+      const { error } = await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/app/dashboard',
       })
+      if (error) {
+        toast.error('Google sign-in is unavailable. Use email and password.')
+        setIsPending(false)
+      }
     } catch {
       toast.error('Google sign-in failed. Try again or use email.')
       setIsPending(false)

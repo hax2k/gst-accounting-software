@@ -1,5 +1,6 @@
 import type { VariantProps } from 'class-variance-authority'
 
+import type { AgeingBucketLabel } from '#/features/accounting/ageing-service.ts'
 import type { badgeVariants } from '#/components/ui/badge.tsx'
 import type { LedgerAccountType } from '#/features/accounting/chart-of-accounts.ts'
 
@@ -10,8 +11,8 @@ export type BadgeIntent = NonNullable<
 
 export function paymentStatusBadgeIntent(status: string): BadgeIntent {
   if (status === 'Paid') return 'success'
-  if (status === 'Part paid') return 'warning'
-  return 'info'
+  // Pending / Part paid / unknown: amber is the industry "waiting" signal.
+  return 'warning'
 }
 
 export function invoiceStatusBadgeIntent(input: {
@@ -65,6 +66,29 @@ export function gstReconciliationBadgeIntent(status: string): BadgeIntent {
     return 'destructive'
   }
   return 'neutral'
+}
+
+/**
+ * Receivables/payables ageing risk scale used across accounting UIs:
+ * current → amber → deeper amber → money-out → overdue red. Never GST purple.
+ */
+export function ageingBucketBadgeIntent(
+  bucket: AgeingBucketLabel,
+): BadgeIntent {
+  if (bucket === 'not-due') return 'success'
+  if (bucket === '1-30') return 'warning'
+  if (bucket === '31-60') return 'inventory'
+  if (bucket === '61-90') return 'money-out'
+  return 'destructive'
+}
+
+/** Chart fill for an ageing bucket — same risk scale as the badge intents. */
+export function ageingBucketChartColor(bucket: AgeingBucketLabel): string {
+  if (bucket === 'not-due') return 'var(--success)'
+  if (bucket === '1-30') return 'var(--warning)'
+  if (bucket === '31-60') return 'var(--inventory)'
+  if (bucket === '61-90') return 'var(--money-out)'
+  return 'var(--destructive)'
 }
 
 export function accountTypeBadgeIntent(

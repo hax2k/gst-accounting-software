@@ -42,23 +42,8 @@ import {
   requireSelection,
   requireWorkspace,
 } from '#/lib/form-validation.ts'
+import { workflowStatusBadgeIntent } from '#/lib/badge-intent.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
-
-function workflowStatusBadgeVariant(status: string) {
-  if (status === 'open') {
-    return 'info' as const
-  }
-
-  if (status === 'converted' || status === 'closed') {
-    return 'success' as const
-  }
-
-  if (status === 'cancelled') {
-    return 'destructive' as const
-  }
-
-  return 'outline' as const
-}
 
 type PurchaseOrderLineDraft = {
   key: string
@@ -305,7 +290,7 @@ export function PurchaseOrdersPanel() {
                 {lines.map((line, index) => (
                   <div
                     key={line.key}
-                    className="flex flex-col gap-3 rounded-xl border border-border p-3"
+                    className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium">
@@ -402,7 +387,7 @@ export function PurchaseOrdersPanel() {
                     <TableCell>{order.orderNumber}</TableCell>
                     <TableCell>{order.orderDate}</TableCell>
                     <TableCell>
-                      <Badge variant={workflowStatusBadgeVariant(order.status)}>
+                      <Badge variant={workflowStatusBadgeIntent(order.status)}>
                         {order.status}
                       </Badge>
                     </TableCell>

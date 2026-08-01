@@ -1,17 +1,46 @@
+# Dependencies
 node_modules
-.DS_Store
+
+# Build output
 dist
 dist-ssr
-*.local
-.env
+.output
 .nitro
+.vinxi
 .tanstack
 .wrangler
-.output
-.vinxi
 __unconfig*
-todos.json
+
+# Environment / local overrides
+.env
+*.local
+
+# Tests, coverage, and browser automation scratch
+coverage
+*.lcov
+test-results/
+playwright-report/
+blob-report/
 .playwright-cli/
 .playwright-mcp/
+.playwright-qa/
+qa-screenshots/
 e2e-reports/
 e2e-*.png
+
+# Local seed/scratch scripts at the repo root
+# (real, reusable scripts belong in scripts/ and should be committed)
+/.seed-demo.mjs
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Misc
+todos.json
+*.log

@@ -913,7 +913,7 @@ export function VoucherEntryPage({
         <div className="flex flex-col gap-4">
           <section className="flex flex-col gap-4">
             {isSales ? (
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,12rem)_1fr] lg:items-start">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,16rem)_1fr] lg:items-start">
                 <div className="flex min-w-0 flex-col gap-1.5 self-start">
                   <span className="text-xs text-muted-foreground">
                     Customer
@@ -941,20 +941,23 @@ export function VoucherEntryPage({
                   />
                   {party ? (
                     <div className="flex flex-col gap-1">
-                      <p className="truncate text-xs text-muted-foreground">
+                      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                         {party.gstin ? (
-                          <span className="font-mono">{party.gstin}</span>
+                          <span className="break-all font-mono">
+                            {party.gstin}
+                          </span>
                         ) : (
                           <span>Unregistered</span>
                         )}
-                        <span aria-hidden="true"> · </span>
-                        <span>{stateLabel(placeOfSupply)}</span>
-                      </p>
+                        <span className="break-words">
+                          {stateLabel(placeOfSupply)}
+                        </span>
+                      </div>
                       <SupplyRegionBadge region={region} />
                     </div>
                   ) : null}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label
                       className="text-xs text-muted-foreground"
@@ -993,7 +996,7 @@ export function VoucherEntryPage({
                     </Select>
                   </div>
                   {paymentMode === 'credit' ? (
-                    <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <div className="flex flex-col gap-1.5">
                       <label
                         className="text-xs text-muted-foreground"
                         htmlFor="sales-due-date"
@@ -1010,7 +1013,7 @@ export function VoucherEntryPage({
                 </div>
               </div>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,12rem)_1fr] lg:items-start">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,16rem)_1fr] lg:items-start">
                 <div className="flex min-w-0 flex-col gap-1.5 self-start">
                   <span className="text-xs text-muted-foreground">
                     Supplier
@@ -1038,20 +1041,23 @@ export function VoucherEntryPage({
                   />
                   {party ? (
                     <div className="flex flex-col gap-1">
-                      <p className="truncate text-xs text-muted-foreground">
+                      <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                         {party.gstin ? (
-                          <span className="font-mono">{party.gstin}</span>
+                          <span className="break-all font-mono">
+                            {party.gstin}
+                          </span>
                         ) : (
                           <span>Unregistered</span>
                         )}
-                        <span aria-hidden="true"> · </span>
-                        <span>{stateLabel(placeOfSupply)}</span>
-                      </p>
+                        <span className="break-words">
+                          {stateLabel(placeOfSupply)}
+                        </span>
+                      </div>
                       <SupplyRegionBadge region={region} />
                     </div>
                   ) : null}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label
                       className="text-xs text-muted-foreground"
@@ -1066,7 +1072,7 @@ export function VoucherEntryPage({
                       value={voucherDate}
                     />
                   </div>
-                  <div className="flex flex-col justify-end gap-1.5">
+                  <div className="flex flex-col gap-1.5">
                     <span className="text-xs text-muted-foreground">
                       Voucher no.
                     </span>
@@ -1352,7 +1358,7 @@ export function VoucherEntryPage({
                       type="file"
                     />
                     {attachmentFile ? (
-                      <p className="truncate text-xs text-muted-foreground">
+                      <p className="break-all text-xs text-muted-foreground">
                         {attachmentFile.name}
                       </p>
                     ) : null}
@@ -1636,7 +1642,7 @@ export function VoucherEntryPage({
                 />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <section className="grid gap-3 pt-2 sm:grid-cols-2">
+                <section className="grid gap-3 pt-2 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="flex flex-col gap-1.5">
                     <label
                       className="text-xs text-muted-foreground"
@@ -1753,7 +1759,12 @@ export function VoucherEntryPage({
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t pt-3 text-base">
                   <span className="font-medium">Grand total</span>
-                  <span className="font-semibold tabular-nums">
+                  <span
+                    className={cn(
+                      'font-semibold tabular-nums',
+                      isSales ? 'text-money-in' : 'text-money-out',
+                    )}
+                  >
                     {formatInr(totals.grandTotal)}
                   </span>
                 </div>
@@ -1793,7 +1804,12 @@ export function VoucherEntryPage({
             </div>
             <div className="hidden flex-col items-end gap-0.5 sm:flex">
               <span className="text-xs text-muted-foreground">Grand total</span>
-              <span className="text-lg font-semibold tabular-nums">
+              <span
+                className={cn(
+                  'text-lg font-semibold tabular-nums',
+                  isSales ? 'text-money-in' : 'text-money-out',
+                )}
+              >
                 {formatInr(totals.grandTotal)}
               </span>
             </div>

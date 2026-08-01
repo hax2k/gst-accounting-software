@@ -1,23 +1,18 @@
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
-  AlertTriangleIcon,
-  ArrowDownLeftIcon,
-  ArrowUpRightIcon,
-  BanknoteIcon,
   CalendarClockIcon,
-  ClockIcon,
-  FileChartColumnIncreasingIcon,
-  IndianRupeeIcon,
+  CircleCheckBigIcon,
+  FilePlusIcon,
   ReceiptIcon,
-  ShoppingCartIcon,
-  TruckIcon,
-  WalletIcon,
+  TrendingUpIcon,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
+import type { CSSProperties, ReactNode } from 'react'
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts'
 
 import { Button } from '#/components/ui/button.tsx'
+import { cn } from '#/lib/utils.ts'
 import {
   Card,
   CardContent,
@@ -27,17 +22,41 @@ import {
 } from '#/components/ui/card.tsx'
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from '#/components/ui/chart.tsx'
 import { DatePicker } from '#/components/ui/date-picker.tsx'
 import { Skeleton } from '#/components/ui/skeleton.tsx'
 import { Badge } from '#/components/ui/badge.tsx'
+import {
+  AGEING_BUCKET_DISPLAY_LABEL,
+  AGEING_BUCKET_ORDER,
+} from '#/features/accounting/ageing-service.ts'
 import { WorkspacePage } from '#/features/app-shell/components/workspace-page.tsx'
 import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
+import { AttentionQueueCard } from '#/features/dashboard/components/attention-queue-card.tsx'
+import { MoneyPosition } from '#/features/dashboard/components/money-position.tsx'
+import {
+  buildMonthCompareView,
+  collapseRangeLabel,
+  hasTrendActivity,
+  isFirstRun,
+  isQuietDay,
+} from '#/features/dashboard/dashboard-view.ts'
+import { moneyTone } from '#/features/dashboard/money-tone.ts'
+import { computeNetPosition } from '#/features/dashboard/net-position.ts'
 import { formatShortDate, localCalendarDate } from '#/lib/calendar-date.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
+
+import { ageingBucketChartColor } from '#/lib/badge-intent.ts'
+import type { BadgeIntent } from '#/lib/badge-intent.ts'
+import type {
+  MonthFigure,
+  MonthFigureKey,
+} from '#/features/dashboard/dashboard-view.ts'
 
 const trendChartConfig = {
   sales: {
@@ -53,8 +72,14 @@ const trendChartConfig = {
 const ageingChartConfig = {
   amount: {
     label: 'Outstanding',
-    color: 'var(--chart-3)',
+    color: 'var(--warning)',
   },
+}
+
+const MONTH_FIGURE_TONE: Record<MonthFigureKey, string> = {
+  sales: 'text-money-in',
+  purchases: 'text-money-out',
+  expenses: 'text-money-out',
 }
 
 function formatDayHeading(date: string) {
@@ -66,27 +91,115 @@ function formatDayHeading(date: string) {
   })
 }
 
-function changeBadgeVariant(
-  percent: string,
-  positiveIsGood: boolean,
-): 'success' | 'destructive' | 'secondary' {
-  const value = Number(percent)
-  if (value === 0) return 'secondary'
-  const isUp = value > 0
-  const isGood = positiveIsGood ? isUp : !isUp
-  return isGood ? 'success' : 'destructive'
+/**
+ * Only sales gets a verdict. Purchases and expenses tracking sales upwards is
+ * not a failure, so their badges stay neutral and carry the number alone.
+ */
+function changeIntent(figure: MonthFigure): BadgeIntent {
+  if (figure.key !== 'sales') return 'secondary'
+  return figure.change?.direction === 'up' ? 'success' : 'destructive'
 }
 
-function formatChangeLabel(percent: string) {
-  const value = Number(percent)
-  if (value === 0) return 'Same as last month'
-  const prefix = value > 0 ? '+' : ''
-  return `${prefix}${percent}% vs last month`
+/** Staggered first-paint reveal for the hero blocks only — dense
+ * screens must never use this. Capped so the whole strip settles quickly. */
+function revealStyle(index: number) {
+  return { animationDelay: `${Math.min(index, 5) * 40}ms` }
+}
+
+const revealClassName =
+  'animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-(--duration-spring) ease-(--ease-spring)'
+
+const figureLabelClassName =
+  'text-[0.625rem] font-medium uppercase tracking-wide text-muted-foreground'
+
+function DayFigure({
+  label,
+  toneClassName,
+  value,
+}: {
+  label: string
+  toneClassName: string
+  value: string
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <span className={cn(figureLabelClassName, 'truncate')}>{label}</span>
+      <span
+        className={cn(
+          'truncate text-sm font-medium tabular-nums',
+          moneyTone(value, toneClassName),
+        )}
+      >
+        {formatInr(value)}
+      </span>
+    </div>
+  )
+}
+
+function DayFigureSkeleton() {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <Skeleton className="h-2.5 w-16" />
+      <Skeleton className="h-4 w-24" />
+    </div>
+  )
+}
+
+function DocumentRow({
+  amount,
+  label,
+  toneClassName,
+}: {
+  amount: string
+  label: string
+  toneClassName: string
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="truncate">{label}</span>
+      <span className={cn('shrink-0 tabular-nums', toneClassName)}>
+        {formatInr(amount)}
+      </span>
+    </div>
+  )
+}
+
+/** Hero-surface empty state: duotone mark, one sentence, one way forward. */
+function EmptyBlock({
+  action,
+  className,
+  icon: Icon,
+  message,
+  tone,
+}: {
+  action?: ReactNode
+  className?: string
+  icon: typeof ReceiptIcon
+  message: string
+  tone: string
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-1 flex-col items-center justify-center gap-3 py-6 text-center',
+        className,
+      )}
+    >
+      <span
+        className="icon-duotone grid size-10 place-items-center rounded-full bg-[color-mix(in_oklch,var(--icon-tone)_16%,transparent)]"
+        style={{ '--icon-tone': tone } as CSSProperties}
+      >
+        <Icon className="size-5" />
+      </span>
+      <span className="text-sm font-medium">{message}</span>
+      {action}
+    </div>
+  )
 }
 
 export function DashboardContent() {
   const trpc = useTRPC()
-  const { companyId, company, isReady } = useWorkspace()
+  const { capabilities, companyId, company, isReady } = useWorkspace()
   const todayDate = localCalendarDate()
   const [selectedDate, setSelectedDate] = useState(todayDate)
   const isToday = selectedDate === todayDate
@@ -101,126 +214,80 @@ export function DashboardContent() {
     }),
     enabled: queryEnabled,
   })
-  const stockQuery = useQuery({
-    ...trpc.inventory.listStockBalances.queryOptions({
-      companyId: companyInput,
-    }),
-    enabled: queryEnabled,
-  })
-  const itemsQuery = useQuery({
-    ...trpc.inventory.listItems.queryOptions({
-      companyId: companyInput,
-    }),
-    enabled: queryEnabled,
-  })
 
+  /**
+   * `snapshot` is absent while the query is pending and also when it fails, and
+   * neither case may be dressed up as real data — an empty attention queue in
+   * particular would read as "nothing needs you" when nothing was fetched.
+   */
   const snapshot = snapshotQuery.data
-  const isSnapshotLoading = snapshotQuery.isPending
-  const isAlertsLoading = stockQuery.isPending || itemsQuery.isPending
+  const ageing = snapshot?.ageing
+  const gstMtd = snapshot?.gstMtd
 
-  const qtyByItem = new Map<string, number>()
-  for (const balance of stockQuery.data ?? []) {
-    qtyByItem.set(
-      balance.itemId,
-      (qtyByItem.get(balance.itemId) ?? 0) + Number(balance.quantity),
-    )
-  }
-  const lowStockItems = (itemsQuery.data ?? [])
-    .filter((item) => item.tracksInventory && Number(item.reorderLevel) > 0)
-    .map((item) => ({
-      id: item.id,
-      name: item.name,
-      unit: item.baseUnit,
-      quantity: qtyByItem.get(item.id) ?? 0,
-      reorderLevel: Number(item.reorderLevel),
-    }))
-    .filter((item) => item.quantity <= item.reorderLevel)
-    .sort((left, right) => left.quantity - right.quantity)
+  /**
+   * The snapshot withholds ageing and GST from callers without `view_reports`.
+   * Reading the same capability from the workspace — which is already resolved
+   * before this query is enabled — lets the report blocks be absent from the
+   * first paint instead of appearing as skeletons and then vanishing.
+   */
+  const canViewReports = capabilities.includes('view_reports')
+  const showGst = canViewReports && (!snapshot || Boolean(gstMtd))
+  const showAgeing = canViewReports && (!snapshot || Boolean(ageing))
+  const canPostSales = capabilities.includes('post_sales')
 
-  const overdueReceivableTotal =
-    snapshot &&
-    isToday &&
-    Number(snapshot.ageing.receivables['31-60']) +
-      Number(snapshot.ageing.receivables['61-90']) +
-      Number(snapshot.ageing.receivables['90+'])
+  /** An empty queue leaves nothing else to look at, so the position leads. */
+  const moneyVariant =
+    snapshot && snapshot.attention.length === 0 ? 'focal' : 'strip'
 
-  const pulseCards = snapshot
-    ? [
-        {
-          label: 'Sales',
-          value: formatInr(snapshot.today.salesTotal),
-          icon: ShoppingCartIcon,
-          tone: 'text-money-in',
-        },
-        {
-          label: 'Purchases',
-          value: formatInr(snapshot.today.purchaseTotal),
-          icon: TruckIcon,
-          tone: 'text-money-out',
-        },
-        {
-          label: 'Money in',
-          value: formatInr(snapshot.today.moneyIn),
-          icon: ArrowDownLeftIcon,
-          tone: 'text-success',
-        },
-        {
-          label: 'Money out',
-          value: formatInr(snapshot.today.moneyOut),
-          icon: ArrowUpRightIcon,
-          tone: 'text-destructive',
-        },
-        {
-          label: 'Expenses',
-          value: formatInr(snapshot.today.expensesTotal),
-          icon: ReceiptIcon,
-          tone: 'text-money-out',
-        },
-        {
-          label: 'Net cash flow',
-          value: formatInr(snapshot.today.netCashFlow),
-          icon: WalletIcon,
-          tone:
-            Number(snapshot.today.netCashFlow) >= 0
-              ? 'text-success'
-              : 'text-destructive',
-        },
-      ]
-    : []
+  const monthCompare = snapshot?.monthCompare
+  const monthView = monthCompare ? buildMonthCompareView(monthCompare) : null
+  const quietDay = snapshot ? isQuietDay(snapshot) : false
 
-  const balanceCards = snapshot
-    ? [
-        {
-          label: 'Cash & bank',
-          value: formatInr(snapshot.balances.cashBankBalance),
-          icon: BanknoteIcon,
-        },
-        {
-          label: 'Customers owe you',
-          value: formatInr(snapshot.balances.receivableTotal),
-          icon: IndianRupeeIcon,
-        },
-        {
-          label: 'You owe suppliers',
-          value: formatInr(snapshot.balances.payableTotal),
-          icon: IndianRupeeIcon,
-        },
-      ]
-    : []
+  const newInvoiceAction = canPostSales ? (
+    <Button asChild size="sm">
+      <Link to="/app/sales/new">New sales invoice</Link>
+    </Button>
+  ) : undefined
 
-  const receivableAgeingData = snapshot
-    ? (['0-30', '31-60', '61-90', '90+'] as const).map((bucket) => ({
-        bucket,
-        amount: Number(snapshot.ageing.receivables[bucket]),
+  /**
+   * A company with nothing on its books would otherwise stack five separate
+   * empty states down the page, so it gets one card and the first moves
+   * instead. The standing balances stay: their zeros are real figures.
+   */
+  const firstRun = snapshot ? isFirstRun(snapshot) : false
+
+  const firstRunActions = (
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      {newInvoiceAction}
+      <Button asChild size="sm" variant="outline">
+        <Link to="/app/masters/parties">Add a party</Link>
+      </Button>
+      <Button asChild size="sm" variant="outline">
+        <Link to="/app/masters/items">Add an item</Link>
+      </Button>
+    </div>
+  )
+
+  const receivableAgeingData = ageing
+    ? AGEING_BUCKET_ORDER.map((bucket) => ({
+        bucket: AGEING_BUCKET_DISPLAY_LABEL[bucket],
+        bucketKey: bucket,
+        amount: Number(ageing.receivables[bucket]),
       }))
     : []
 
-  const payableAgeingData = snapshot
-    ? (['0-30', '31-60', '61-90', '90+'] as const).map((bucket) => ({
-        bucket,
-        amount: Number(snapshot.ageing.payables[bucket]),
+  const payableAgeingData = ageing
+    ? AGEING_BUCKET_ORDER.map((bucket) => ({
+        bucket: AGEING_BUCKET_DISPLAY_LABEL[bucket],
+        bucketKey: bucket,
+        amount: Number(ageing.payables[bucket]),
       }))
     : []
+
+  const hasReceivableAgeing = receivableAgeingData.some(
+    (row) => row.amount !== 0,
+  )
+  const hasPayableAgeing = payableAgeingData.some((row) => row.amount !== 0)
 
   return (
     <WorkspacePage
@@ -249,523 +316,431 @@ export function DashboardContent() {
       description={formatDayHeading(selectedDate)}
       title="Dashboard"
     >
-      {isSnapshotLoading ? (
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton className="h-28 w-full" key={index} />
-          ))}
-        </div>
-      ) : snapshot ? (
-        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Month sales</CardDescription>
-              <CardTitle className="text-xl tabular-nums text-money-in">
-                {formatInr(snapshot.monthCompare.current.salesTotal)}
-              </CardTitle>
-              <CardDescription>
-                {snapshot.monthCompare.currentLabel}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge
-                variant={changeBadgeVariant(
-                  snapshot.monthCompare.change.salesPercent,
-                  true,
-                )}
-              >
-                {formatChangeLabel(snapshot.monthCompare.change.salesPercent)}
-              </Badge>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Last month: {formatInr(snapshot.monthCompare.previous.salesTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Month purchases</CardDescription>
-              <CardTitle className="text-xl tabular-nums text-money-out">
-                {formatInr(snapshot.monthCompare.current.purchaseTotal)}
-              </CardTitle>
-              <CardDescription>
-                {snapshot.monthCompare.currentLabel}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge
-                variant={changeBadgeVariant(
-                  snapshot.monthCompare.change.purchasePercent,
-                  false,
-                )}
-              >
-                {formatChangeLabel(snapshot.monthCompare.change.purchasePercent)}
-              </Badge>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Last month:{' '}
-                {formatInr(snapshot.monthCompare.previous.purchaseTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Month expenses</CardDescription>
-              <CardTitle className="text-xl tabular-nums text-money-out">
-                {formatInr(snapshot.monthCompare.current.expensesTotal)}
-              </CardTitle>
-              <CardDescription>
-                {snapshot.monthCompare.currentLabel}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Badge
-                variant={changeBadgeVariant(
-                  snapshot.monthCompare.change.expensesPercent,
-                  false,
-                )}
-              >
-                {formatChangeLabel(snapshot.monthCompare.change.expensesPercent)}
-              </Badge>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Last month:{' '}
-                {formatInr(snapshot.monthCompare.previous.expensesTotal)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Compared period</CardDescription>
-              <CardTitle className="text-base">Same days last month</CardTitle>
-              <CardDescription>
-                {snapshot.monthCompare.previousLabel}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              Fair month-to-date comparison using the same number of calendar
-              days.
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
-      <div className="grid gap-3 grid-cols-2 md:grid-cols-4 xl:grid-cols-6">
-        {isSnapshotLoading
-          ? Array.from({ length: 6 }).map((_, index) => (
-              <Skeleton className="h-24 w-full" key={index} />
-            ))
-          : pulseCards.map((card) => {
-              const Icon = card.icon
-              return (
-                <Card key={card.label}>
-                  <CardHeader className="pb-2">
-                    <CardDescription className="flex items-center gap-2">
-                      <Icon className="size-3.5" />
-                      {card.label}
-                    </CardDescription>
-                    <CardTitle
-                      className={`text-2xl tabular-nums ${card.tone}`}
-                    >
-                      {card.value}
-                    </CardTitle>
-                  </CardHeader>
-                </Card>
-              )
-            })}
+      <div
+        className={cn('flex flex-col gap-2', revealClassName)}
+        style={revealStyle(0)}
+      >
+        {!isToday ? (
+          <span className={figureLabelClassName}>Live balances, as of now</span>
+        ) : null}
+        <MoneyPosition
+          cashBank={snapshot?.balances.cashBankBalance ?? '0'}
+          isLoading={!snapshot}
+          netPosition={snapshot ? computeNetPosition(snapshot.balances) : '0'}
+          payable={snapshot?.balances.payableTotal ?? '0'}
+          receivable={snapshot?.balances.receivableTotal ?? '0'}
+          variant={moneyVariant}
+        />
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
-        {isSnapshotLoading ? (
-          <Skeleton className="h-72 w-full lg:col-span-2" />
-        ) : snapshot ? (
-          <Card className="lg:col-span-2">
+      {firstRun ? (
+        <div className={revealClassName} style={revealStyle(1)}>
+          <Card size="hero">
+            <CardContent>
+              <EmptyBlock
+                action={firstRunActions}
+                icon={FilePlusIcon}
+                message="Nothing recorded yet"
+                tone="var(--money-in)"
+              />
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
+          <div className={revealClassName} style={revealStyle(1)}>
+            <AttentionQueueCard
+              isLoading={!snapshot}
+              items={snapshot?.attention ?? []}
+            />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  {isToday ? 'Today' : 'On this day'}
+                </CardTitle>
+                <CardDescription>
+                  {formatDayHeading(selectedDate)}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                {!snapshot ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <DayFigureSkeleton key={index} />
+                    ))}
+                  </div>
+                ) : quietDay ? (
+                  <EmptyBlock
+                    action={newInvoiceAction}
+                    icon={FilePlusIcon}
+                    message={
+                      isToday
+                        ? 'Nothing recorded today'
+                        : 'Nothing recorded on this day'
+                    }
+                    tone="var(--money-in)"
+                  />
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <DayFigure
+                        label="Sales"
+                        toneClassName="text-money-in"
+                        value={snapshot.today.salesTotal}
+                      />
+                      <DayFigure
+                        label="Purchases"
+                        toneClassName="text-money-out"
+                        value={snapshot.today.purchaseTotal}
+                      />
+                      <DayFigure
+                        label="Net cash flow"
+                        toneClassName={
+                          Number(snapshot.today.netCashFlow) < 0
+                            ? 'text-money-out'
+                            : 'text-money-in'
+                        }
+                        value={snapshot.today.netCashFlow}
+                      />
+                    </div>
+
+                    {snapshot.dueToday.receivables.length > 0 ||
+                    snapshot.dueToday.payables.length > 0 ? (
+                      <section className="flex min-w-0 flex-col gap-2 border-t border-border/60 pt-3 text-sm">
+                        <h3 className="flex items-center gap-2 text-xs font-medium">
+                          <CalendarClockIcon className="size-3.5 text-muted-foreground" />
+                          Falls due
+                        </h3>
+                        {snapshot.dueToday.receivables
+                          .slice(0, 4)
+                          .map((row) => (
+                            <DocumentRow
+                              amount={row.amount}
+                              key={row.id}
+                              label={`Collect from ${row.partyName} · ${row.documentNumber}`}
+                              toneClassName="text-money-in"
+                            />
+                          ))}
+                        {snapshot.dueToday.payables.slice(0, 4).map((row) => (
+                          <DocumentRow
+                            amount={row.amount}
+                            key={row.id}
+                            label={`Pay ${row.partyName} · ${row.documentNumber}`}
+                            toneClassName="text-money-out"
+                          />
+                        ))}
+                      </section>
+                    ) : null}
+
+                    {snapshot.todayExpenses.length > 0 ? (
+                      <section className="flex min-w-0 flex-col gap-2 border-t border-border/60 pt-3 text-sm">
+                        <h3 className="flex items-center gap-2 text-xs font-medium">
+                          <ReceiptIcon className="size-3.5 text-muted-foreground" />
+                          Expenses
+                        </h3>
+                        {snapshot.todayExpenses.slice(0, 4).map((expense) => (
+                          <DocumentRow
+                            amount={expense.amount}
+                            key={expense.id}
+                            label={expense.narration}
+                            toneClassName="text-money-out"
+                          />
+                        ))}
+                        <Button
+                          asChild
+                          className="mt-1 self-start"
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Link to="/app/expenses">All expenses</Link>
+                        </Button>
+                      </section>
+                    ) : null}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">This month so far</CardTitle>
+                <CardDescription>
+                  {monthCompare
+                    ? collapseRangeLabel(monthCompare.currentLabel)
+                    : 'Month to date'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-4">
+                {!monthView ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {Array.from({ length: 3 }).map((_, index) => (
+                      <DayFigureSkeleton key={index} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-3 gap-3">
+                      {monthView.figures.map((figure) => (
+                        <div
+                          className="flex min-w-0 flex-col items-start gap-1"
+                          key={figure.key}
+                        >
+                          <span
+                            className={cn(figureLabelClassName, 'truncate')}
+                          >
+                            {figure.label}
+                          </span>
+                          <span
+                            className={cn(
+                              'truncate text-sm font-medium tabular-nums',
+                              moneyTone(
+                                figure.value,
+                                MONTH_FIGURE_TONE[figure.key],
+                              ),
+                            )}
+                          >
+                            {formatInr(figure.value)}
+                          </span>
+                          {figure.change ? (
+                            <Badge variant={changeIntent(figure)}>
+                              {figure.change.label}
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                    {monthView.caption ? (
+                      <span className="text-xs text-muted-foreground">
+                        {monthView.caption}
+                      </span>
+                    ) : null}
+                  </div>
+                )}
+
+                {showGst ? (
+                  <div className="mt-auto flex flex-wrap items-end justify-between gap-3 border-t border-border/60 pt-3">
+                    {gstMtd ? (
+                      <>
+                        <div className="flex min-w-0 flex-col gap-1">
+                          <span
+                            className={cn(figureLabelClassName, 'truncate')}
+                          >
+                            GST net payable
+                          </span>
+                          <span
+                            className={cn(
+                              'truncate text-sm font-medium tabular-nums',
+                              moneyTone(
+                                gstMtd.netGstPayable,
+                                Number(gstMtd.netGstPayable) > 0
+                                  ? 'text-money-out'
+                                  : 'text-money-in',
+                              ),
+                            )}
+                          >
+                            {formatInr(gstMtd.netGstPayable)}
+                          </span>
+                        </div>
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/app/reports">GST reports</Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-1.5">
+                          <Skeleton className="h-2.5 w-24" />
+                          <Skeleton className="h-4 w-28" />
+                        </div>
+                        <Skeleton className="h-8 w-28" />
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
             <CardHeader>
               <CardTitle className="text-base">
                 {isToday
                   ? 'Last 7 days'
-                  : `7 days ending ${formatShortDate(selectedDate)}`}
+                  : `7 days to ${formatShortDate(selectedDate)}`}
               </CardTitle>
               <CardDescription>Sales vs purchases</CardDescription>
             </CardHeader>
-            <CardContent>
-              <ChartContainer
-                className="aspect-auto h-56 w-full"
-                config={trendChartConfig}
-              >
-                <BarChart data={snapshot.trend}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    axisLine={false}
-                    dataKey="date"
-                    tickFormatter={formatShortDate}
-                    tickLine={false}
-                    tickMargin={8}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value, name) => (
-                          <span className="tabular-nums">
-                            {name}: {formatInr(String(value))}
-                          </span>
-                        )}
-                        labelFormatter={(value) => formatShortDate(String(value))}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="sales"
-                    fill="var(--color-sales)"
-                    radius={4}
-                  />
-                  <Bar
-                    dataKey="purchases"
-                    fill="var(--color-purchases)"
-                    radius={4}
-                  />
-                </BarChart>
-              </ChartContainer>
+            <CardContent className="flex flex-1 flex-col">
+              {!snapshot ? (
+                <Skeleton className="h-56 w-full" />
+              ) : hasTrendActivity(snapshot.trend) ? (
+                <ChartContainer
+                  className="aspect-auto h-56 w-full"
+                  config={trendChartConfig}
+                >
+                  <BarChart data={snapshot.trend}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      axisLine={false}
+                      dataKey="date"
+                      tickFormatter={formatShortDate}
+                      tickLine={false}
+                      tickMargin={8}
+                    />
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value, name) => (
+                            <span className="tabular-nums">
+                              {name}: {formatInr(String(value))}
+                            </span>
+                          )}
+                          labelFormatter={(value) =>
+                            formatShortDate(String(value))
+                          }
+                        />
+                      }
+                    />
+                    <ChartLegend content={<ChartLegendContent />} />
+                    <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
+                    <Bar
+                      dataKey="purchases"
+                      fill="var(--color-purchases)"
+                      radius={4}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              ) : (
+                <EmptyBlock
+                  action={newInvoiceAction}
+                  className="h-56"
+                  icon={TrendingUpIcon}
+                  message="No sales or purchases in these 7 days"
+                  tone="var(--money-in)"
+                />
+              )}
             </CardContent>
           </Card>
-        ) : null}
 
-        {isSnapshotLoading ? (
-          <Skeleton className="h-72 w-full" />
-        ) : snapshot ? (
-          <div className="flex flex-col gap-3">
-            <Card className="border-gst/30 bg-gst-foreground/30">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileChartColumnIncreasingIcon className="size-4 text-gst" />
-                  GST this month
-                </CardTitle>
-                <CardDescription>
-                  {snapshot.gstMtd.periodStart} to {snapshot.gstMtd.periodEnd}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2.5 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Taxable sales</span>
-                  <span className="font-medium tabular-nums text-money-in">
-                    {formatInr(snapshot.gstMtd.outwardTaxableValue)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Output GST</span>
-                  <span className="font-medium tabular-nums text-gst">
-                    {formatInr(snapshot.gstMtd.outputGst)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Input GST</span>
-                  <span className="font-medium tabular-nums text-gst">
-                    {formatInr(snapshot.gstMtd.inputGst)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Net payable</span>
-                  <span className="font-medium tabular-nums text-money-out">
-                    {formatInr(snapshot.gstMtd.netGstPayable)}
-                  </span>
-                </div>
-                <Button asChild className="mt-1 w-full" size="sm" variant="outline">
-                  <Link to="/app/reports">Open GST reports</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            {isToday ? (
-              balanceCards.map((card) => {
-                const Icon = card.icon
-                return (
-                  <Card key={card.label}>
-                    <CardHeader className="pb-2">
-                      <CardDescription className="flex items-center gap-2">
-                        <Icon className="size-3.5" />
-                        {card.label}
-                      </CardDescription>
-                      <CardTitle className="text-xl tabular-nums">
-                        {card.value}
-                      </CardTitle>
-                    </CardHeader>
-                  </Card>
-                )
-              })
-            ) : (
+          {showAgeing ? (
+            <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Live balances</CardTitle>
-                  <CardDescription>Current position as of now</CardDescription>
+                  <CardTitle className="text-base">
+                    Receivables ageing
+                  </CardTitle>
+                  <CardDescription>Outstanding by bucket</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-2 text-sm">
-                  {balanceCards.map((card) => (
-                    <div className="flex justify-between gap-3" key={card.label}>
-                      <span className="text-muted-foreground">{card.label}</span>
-                      <span className="tabular-nums">{card.value}</span>
-                    </div>
-                  ))}
-                  <Button
-                    className="mt-1 self-start"
-                    onClick={() => setSelectedDate(todayDate)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Jump to today
-                  </Button>
+                <CardContent className="flex flex-1 flex-col">
+                  {!ageing ? (
+                    <Skeleton className="h-48 w-full" />
+                  ) : !hasReceivableAgeing ? (
+                    <EmptyBlock
+                      className="h-48"
+                      icon={CircleCheckBigIcon}
+                      message="Every invoice is settled"
+                      tone="var(--money-in)"
+                    />
+                  ) : (
+                    <ChartContainer
+                      className="aspect-auto h-48 w-full"
+                      config={ageingChartConfig}
+                    >
+                      <BarChart
+                        data={receivableAgeingData}
+                        layout="vertical"
+                        margin={{ left: 8 }}
+                      >
+                        <CartesianGrid horizontal={false} />
+                        <XAxis hide type="number" />
+                        <YAxis
+                          axisLine={false}
+                          dataKey="bucket"
+                          tickLine={false}
+                          type="category"
+                          width={72}
+                        />
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => formatInr(String(value))}
+                            />
+                          }
+                        />
+                        <Bar dataKey="amount" radius={4}>
+                          {receivableAgeingData.map((row) => (
+                            <Cell
+                              fill={ageingBucketChartColor(row.bucketKey)}
+                              key={row.bucketKey}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  )}
                 </CardContent>
               </Card>
-            )}
-          </div>
-        ) : null}
-      </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <CalendarClockIcon className="size-4 text-muted-foreground" />
-              Due on this day
-            </CardTitle>
-            <CardDescription>{formatDayHeading(selectedDate)}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
-            {isSnapshotLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : snapshot ? (
-              <>
-                <div className="flex flex-col gap-1.5">
-                  <p className="font-medium text-money-in">To collect</p>
-                  {snapshot.dueToday.receivables.length === 0 ? (
-                    <p className="text-muted-foreground">Nothing due this day.</p>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Payables ageing</CardTitle>
+                  <CardDescription>Outstanding by bucket</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-1 flex-col">
+                  {!ageing ? (
+                    <Skeleton className="h-48 w-full" />
+                  ) : !hasPayableAgeing ? (
+                    <EmptyBlock
+                      className="h-48"
+                      icon={CircleCheckBigIcon}
+                      message="No supplier bills outstanding"
+                      tone="var(--money-in)"
+                    />
                   ) : (
-                    snapshot.dueToday.receivables.slice(0, 5).map((row) => (
-                      <div className="flex justify-between gap-3" key={row.id}>
-                        <span className="truncate">
-                          {row.partyName} · {row.documentNumber}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-money-in">
-                          {formatInr(row.amount)}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <p className="font-medium text-money-out">To pay</p>
-                  {snapshot.dueToday.payables.length === 0 ? (
-                    <p className="text-muted-foreground">Nothing due this day.</p>
-                  ) : (
-                    snapshot.dueToday.payables.slice(0, 5).map((row) => (
-                      <div className="flex justify-between gap-3" key={row.id}>
-                        <span className="truncate">
-                          {row.partyName} · {row.documentNumber}
-                        </span>
-                        <span className="shrink-0 tabular-nums text-money-out">
-                          {formatInr(row.amount)}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ReceiptIcon className="size-4 text-muted-foreground" />
-              Day expenses
-            </CardTitle>
-            <CardDescription>
-              {snapshot
-                ? formatInr(snapshot.today.expensesTotal)
-                : 'Posted expenses'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-1.5 text-sm">
-            {isSnapshotLoading ? (
-              <Skeleton className="h-24 w-full" />
-            ) : snapshot && snapshot.todayExpenses.length > 0 ? (
-              <>
-                {snapshot.todayExpenses.slice(0, 6).map((expense) => (
-                  <div className="flex justify-between gap-3" key={expense.id}>
-                    <span className="truncate">{expense.narration}</span>
-                    <span className="shrink-0 tabular-nums text-money-out">
-                      {formatInr(expense.amount)}
-                    </span>
-                  </div>
-                ))}
-                <Button
-                  asChild
-                  className="mt-1 self-start"
-                  size="sm"
-                  variant="outline"
-                >
-                  <Link to="/app/expenses">All expenses</Link>
-                </Button>
-              </>
-            ) : (
-              <p className="text-muted-foreground">No expenses on this day.</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {isToday ? (
-        <div className="grid gap-3 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Receivables ageing</CardTitle>
-              <CardDescription>Outstanding by bucket</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isSnapshotLoading ? (
-                <Skeleton className="h-48 w-full" />
-              ) : (
-                <ChartContainer
-                  className="aspect-auto h-48 w-full"
-                  config={ageingChartConfig}
-                >
-                  <BarChart
-                    data={receivableAgeingData}
-                    layout="vertical"
-                    margin={{ left: 8 }}
-                  >
-                    <CartesianGrid horizontal={false} />
-                    <XAxis hide type="number" />
-                    <YAxis
-                      axisLine={false}
-                      dataKey="bucket"
-                      tickLine={false}
-                      type="category"
-                      width={48}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          formatter={(value) => formatInr(String(value))}
+                    <ChartContainer
+                      className="aspect-auto h-48 w-full"
+                      config={ageingChartConfig}
+                    >
+                      <BarChart
+                        data={payableAgeingData}
+                        layout="vertical"
+                        margin={{ left: 8 }}
+                      >
+                        <CartesianGrid horizontal={false} />
+                        <XAxis hide type="number" />
+                        <YAxis
+                          axisLine={false}
+                          dataKey="bucket"
+                          tickLine={false}
+                          type="category"
+                          width={72}
                         />
-                      }
-                    />
-                    <Bar
-                      dataKey="amount"
-                      fill="var(--color-amount)"
-                      radius={4}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Payables ageing</CardTitle>
-              <CardDescription>Outstanding by bucket</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isSnapshotLoading ? (
-                <Skeleton className="h-48 w-full" />
-              ) : (
-                <ChartContainer
-                  className="aspect-auto h-48 w-full"
-                  config={ageingChartConfig}
-                >
-                  <BarChart
-                    data={payableAgeingData}
-                    layout="vertical"
-                    margin={{ left: 8 }}
-                  >
-                    <CartesianGrid horizontal={false} />
-                    <XAxis hide type="number" />
-                    <YAxis
-                      axisLine={false}
-                      dataKey="bucket"
-                      tickLine={false}
-                      type="category"
-                      width={48}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          formatter={(value) => formatInr(String(value))}
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => formatInr(String(value))}
+                            />
+                          }
                         />
-                      }
-                    />
-                    <Bar
-                      dataKey="amount"
-                      fill="var(--color-amount)"
-                      radius={4}
-                    />
-                  </BarChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      ) : null}
-
-      {isToday &&
-      (lowStockItems.length > 0 || (overdueReceivableTotal ?? 0) > 0) ? (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {lowStockItems.length > 0 ? (
-            <Card className="border-warning/30 bg-warning-foreground/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <AlertTriangleIcon className="size-4 text-warning" />
-                  Low stock ({lowStockItems.length})
-                </CardTitle>
-                <CardDescription>
-                  Items at or below their reorder level.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-1.5 text-sm">
-                {lowStockItems.slice(0, 5).map((item) => (
-                  <div className="flex justify-between gap-3" key={item.id}>
-                    <span className="truncate">{item.name}</span>
-                    <span className="shrink-0 tabular-nums text-inventory">
-                      {item.quantity} / {item.reorderLevel} {item.unit}
-                    </span>
-                  </div>
-                ))}
-                <Button
-                  asChild
-                  className="mt-1 self-start"
-                  size="sm"
-                  variant="outline"
-                >
-                  <Link to="/app/inventory">Review inventory</Link>
-                </Button>
-              </CardContent>
-            </Card>
+                        <Bar dataKey="amount" radius={4}>
+                          {payableAgeingData.map((row) => (
+                            <Cell
+                              fill={ageingBucketChartColor(row.bucketKey)}
+                              key={row.bucketKey}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           ) : null}
-          {(overdueReceivableTotal ?? 0) > 0 ? (
-            <Card className="border-destructive/30">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <ClockIcon className="size-4 text-destructive" />
-                  Overdue receivables
-                </CardTitle>
-                <CardDescription>
-                  {formatInr(overdueReceivableTotal ?? 0)} past 30 days.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-1.5 text-sm">
-                <Button
-                  asChild
-                  className="self-start"
-                  size="sm"
-                  variant="outline"
-                >
-                  <Link to="/app/sales">Chase payments</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
-      ) : isAlertsLoading && isToday ? (
-        <Skeleton className="h-32 w-full" />
-      ) : null}
+        </>
+      )}
     </WorkspacePage>
   )
 }

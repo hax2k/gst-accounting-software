@@ -25,6 +25,7 @@ import { WorkspacePage } from '#/features/app-shell/components/workspace-page.ts
 import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
 import { toastActionError } from '#/features/app-shell/form-error.ts'
 import { requireWorkspace } from '#/lib/form-validation.ts'
+import { ocrDraftBadgeIntent } from '#/lib/badge-intent.ts'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
 
@@ -160,11 +161,16 @@ export function OcrReviewPanel() {
                       {formatInr(draft.fields.totalAmount.value)}
                     </TableCell>
                     <TableCell>
-                      {draft.lowConfidenceFields.length > 0 ? (
-                        <Badge variant="warning">Low confidence</Badge>
-                      ) : (
-                        <Badge variant="outline">{draft.status}</Badge>
-                      )}
+                      <Badge
+                        variant={ocrDraftBadgeIntent({
+                          lowConfidence: draft.lowConfidenceFields.length > 0,
+                          status: draft.status,
+                        })}
+                      >
+                        {draft.lowConfidenceFields.length > 0
+                          ? 'Low confidence'
+                          : draft.status}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Button

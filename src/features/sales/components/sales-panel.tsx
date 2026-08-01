@@ -47,14 +47,22 @@ import {
   nextVoucherListCursor,
   VOUCHER_LIST_PAGE_SIZE,
 } from '#/features/documents/voucher-list-pagination.ts'
+import { ActiveFilterChip } from '#/features/app-shell/components/active-filter-chip.tsx'
 import { WorkspacePage } from '#/features/app-shell/components/workspace-page.tsx'
 import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
+import { resolveListFilter } from '#/features/app-shell/list-filter.ts'
 import { toastActionError } from '#/features/app-shell/form-error.ts'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
 import { invoiceStatusBadgeIntent } from '#/lib/badge-intent.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
 
-export function SalesPanel() {
+export function SalesPanel({
+  partyId,
+  onClearPartyFilter,
+}: {
+  partyId?: string
+  onClearPartyFilter?: () => void
+}) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const { companyId, isReady } = useWorkspace()
@@ -70,11 +78,24 @@ export function SalesPanel() {
     invoiceNumber: string
   } | null>(null)
   const resolvedCompanyId = companyId ?? '00000000-0000-4000-8000-000000000099'
+  const partiesQuery = useQuery({
+    ...trpc.parties.list.queryOptions({
+      companyId: resolvedCompanyId,
+    }),
+    enabled: Boolean(companyId) && isReady,
+  })
+  const parties = partiesQuery.data ?? []
+  const partyFilter = resolveListFilter(
+    partyId,
+    parties.map((party) => ({ id: party.id, label: party.name })),
+    partiesQuery.isSuccess,
+  )
   const salesQuery = useInfiniteQuery(
     trpc.sales.list.infiniteQueryOptions(
       {
         companyId: resolvedCompanyId,
         limit: VOUCHER_LIST_PAGE_SIZE,
+        partyId: partyFilter.id,
         paymentStatus: filter === 'all' ? undefined : filter,
         search: query.trim() || undefined,
       },
@@ -100,13 +121,6 @@ export function SalesPanel() {
       toastActionError(error, 'Failed to cancel invoice')
     },
   })
-  const partiesQuery = useQuery({
-    ...trpc.parties.list.queryOptions({
-      companyId: resolvedCompanyId,
-    }),
-    enabled: Boolean(companyId) && isReady,
-  })
-
   const partyName = React.useMemo(() => {
     const map = new Map(
       (partiesQuery.data ?? []).map((party) => [party.id, party.name]),
@@ -140,19 +154,27 @@ export function SalesPanel() {
     >
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <Tabs
-            onValueChange={(value) =>
-              setFilter(value as 'all' | 'Paid' | 'Part paid' | 'Pending')
-            }
-            value={filter}
-          >
-            <ScrollableTabsList>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="Pending">Pending</TabsTrigger>
-              <TabsTrigger value="Part paid">Part paid</TabsTrigger>
-              <TabsTrigger value="Paid">Paid</TabsTrigger>
-            </ScrollableTabsList>
-          </Tabs>
+          <div className="flex flex-wrap items-center gap-2">
+            <Tabs
+              onValueChange={(value) =>
+                setFilter(value as 'all' | 'Paid' | 'Part paid' | 'Pending')
+              }
+              value={filter}
+            >
+              <ScrollableTabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="Pending">Pending</TabsTrigger>
+                <TabsTrigger value="Part paid">Part paid</TabsTrigger>
+                <TabsTrigger value="Paid">Paid</TabsTrigger>
+              </ScrollableTabsList>
+            </Tabs>
+            {partyFilter.id && onClearPartyFilter ? (
+              <ActiveFilterChip
+                label={partyFilter.label ?? partyName(partyFilter.id)}
+                onClear={onClearPartyFilter}
+              />
+            ) : null}
+          </div>
           <SearchInput
             className="w-full sm:max-w-xs"
             onChange={(event) => setQuery(event.target.value)}
@@ -203,7 +225,9 @@ export function SalesPanel() {
                   <TableCell>{row.invoiceDate}</TableCell>
                   <TableCell>{formatInr(row.taxableAmount)}</TableCell>
                   <TableCell>{formatInr(row.totalGstAmount)}</TableCell>
-                  <TableCell>{formatInr(row.totalAmount)}</TableCell>
+                  <TableCell className="font-medium text-money-in">
+                    {formatInr(row.totalAmount)}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={invoiceStatusBadgeIntent({

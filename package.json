@@ -33,7 +33,7 @@
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
-    "deploy": "bun run build && wrangler deploy",
+    "deploy": "VITE_ENABLE_GOOGLE_AUTH=false bun run build && wrangler deploy",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:apply-0007": "bun scripts/apply-migration-0007.ts",

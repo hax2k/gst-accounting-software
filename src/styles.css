@@ -7,23 +7,29 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Monday-style rich navy sidebar + white workspace; single blue accent (~256) */
-  --brand-hue: 256;
-  --workspace: oklch(1 0 0);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.25 0.03 var(--brand-hue));
+  /* Rich Ledger / Editorial hybrid: neutral near-black chrome on a warm paper
+     canvas (hue 95) plus the five-color semantic system (money-in emerald,
+     money-out rose, gst violet, inventory amber, banking/info sky). With no
+     chromatic primary competing, the semantic tokens are the only color on
+     screen. Chrome values are explicit — there is no brand hue variable, so a
+     token can never silently resolve against the wrong palette. See DESIGN.md. */
+  /* The canvas is a hair off-white while --card stays pure white, so a card
+     reads as a raised surface without needing a hairline border around it. */
+  --workspace: oklch(0.978 0.006 95);
+  --background: oklch(0.978 0.006 95);
+  --foreground: oklch(0.22 0.008 95);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.25 0.03 var(--brand-hue));
+  --card-foreground: oklch(0.22 0.008 95);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.03 var(--brand-hue));
-  --primary: oklch(0.48 0.14 var(--brand-hue));
-  --primary-foreground: oklch(0.99 0.005 var(--brand-hue));
-  --secondary: oklch(0.955 0.012 var(--brand-hue));
-  --secondary-foreground: oklch(0.3 0.04 var(--brand-hue));
-  --muted: oklch(0.94 0.012 var(--brand-hue));
-  --muted-foreground: oklch(0.5 0.03 var(--brand-hue));
-  --accent: oklch(0.94 0.015 var(--brand-hue));
-  --accent-foreground: oklch(0.3 0.04 var(--brand-hue));
+  --popover-foreground: oklch(0.22 0.008 95);
+  --primary: oklch(0.24 0.012 95);
+  --primary-foreground: oklch(0.98 0.004 95);
+  --secondary: oklch(0.955 0.006 95);
+  --secondary-foreground: oklch(0.3 0.01 95);
+  --muted: oklch(0.945 0.006 95);
+  --muted-foreground: oklch(0.52 0.01 95);
+  --accent: oklch(0.94 0.008 95);
+  --accent-foreground: oklch(0.28 0.01 95);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.596 0.145 163.225);
@@ -35,45 +41,73 @@
   --gst: oklch(0.541 0.281 293.009);
   --gst-foreground: oklch(0.977 0.014 308.299);
   --money-in: oklch(0.596 0.145 163.225);
-  --money-out: oklch(0.586 0.253 17.585);
+  /* Darkened from L=0.586: the lighter rose cleared 4.5:1 on white but only
+     reached 3.98:1 as `text-money-out` on a `bg-money-out/15` badge. */
+  --money-out: oklch(0.54 0.24 17.585);
   --inventory: oklch(0.666 0.179 58.318);
-  --border: oklch(0.91 0.012 var(--brand-hue));
-  --input: oklch(0.91 0.012 var(--brand-hue));
-  --ring: oklch(0.55 0.1 var(--brand-hue));
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --radius: 0.625rem;
-  --shell-canvas: oklch(1 0 0);
-  --sidebar: oklch(0.28 0.065 var(--brand-hue));
-  --sidebar-foreground: oklch(0.94 0.012 var(--brand-hue));
-  --sidebar-primary: oklch(0.48 0.14 var(--brand-hue));
-  --sidebar-primary-foreground: oklch(0.99 0.005 var(--brand-hue));
-  --sidebar-accent: oklch(0.36 0.06 var(--brand-hue));
-  --sidebar-accent-foreground: oklch(0.98 0.008 var(--brand-hue));
-  --sidebar-border: oklch(0.4 0.055 var(--brand-hue));
-  --sidebar-ring: oklch(0.55 0.1 var(--brand-hue));
-  --sidebar-active: oklch(0.42 0.075 var(--brand-hue));
+  --banking: oklch(0.588 0.158 241.966);
+  --banking-foreground: oklch(0.977 0.013 236.62);
+  --border: oklch(0.9 0.006 95);
+  --input: oklch(0.9 0.006 95);
+  --ring: oklch(0.45 0.012 95);
+  /* Chart series map 1:1 onto the semantic palette so a trend line always
+     carries the same meaning as its badge/icon elsewhere in the product. */
+  --chart-1: var(--money-in);
+  --chart-2: var(--money-out);
+  --chart-3: var(--gst);
+  --chart-4: var(--inventory);
+  --chart-5: var(--banking);
+  --radius: 0.5rem;
+  --radius-hero: 1.125rem;
+  --ease-precise: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-spring: 220ms;
+  /* Elevation scale — card containers are separated from the canvas by light,
+     not by a hairline. The scale is defined once here; themes only re-tint the
+     three inputs below. `--elevation-edge` is the dark-mode answer to shadows
+     being invisible on dark surfaces and stays transparent in light mode. */
+  --elevation-edge: transparent;
+  --elevation-key: oklch(0.22 0.012 95 / 10%);
+  --elevation-ambient: oklch(0.22 0.012 95 / 9%);
+  --elevation-1:
+    0 0 0 1px var(--elevation-edge), 0 1px 2px -1px var(--elevation-key),
+    0 4px 12px -6px var(--elevation-ambient);
+  --elevation-2:
+    0 0 0 1px var(--elevation-edge), 0 2px 6px -2px var(--elevation-key),
+    0 16px 32px -14px var(--elevation-ambient);
+  --shell-canvas: oklch(0.953 0.014 95);
+  --sidebar: oklch(0.953 0.014 95);
+  --sidebar-foreground: oklch(0.4 0.01 95);
+  --sidebar-primary: oklch(0.24 0.012 95);
+  --sidebar-primary-foreground: oklch(0.98 0.004 95);
+  --sidebar-accent: oklch(0.915 0.01 95);
+  --sidebar-accent-foreground: oklch(0.24 0.012 95);
+  --sidebar-border: oklch(0.888 0.008 95);
+  --sidebar-ring: oklch(0.45 0.012 95);
+  --sidebar-active: oklch(0.898 0.012 95);
+  --sidebar-active-foreground: oklch(0.2 0.012 95);
 }
 
 .dark {
-  --workspace: oklch(0.2 0.025 var(--brand-hue));
-  --background: oklch(0.24 0.028 var(--brand-hue));
-  --foreground: oklch(0.95 0.01 var(--brand-hue));
-  --card: oklch(0.27 0.03 var(--brand-hue));
-  --card-foreground: oklch(0.95 0.01 var(--brand-hue));
-  --popover: oklch(0.27 0.03 var(--brand-hue));
-  --popover-foreground: oklch(0.95 0.01 var(--brand-hue));
-  --primary: oklch(0.62 0.14 var(--brand-hue));
-  --primary-foreground: oklch(0.99 0.005 var(--brand-hue));
-  --secondary: oklch(0.32 0.035 var(--brand-hue));
-  --secondary-foreground: oklch(0.95 0.01 var(--brand-hue));
-  --muted: oklch(0.32 0.03 var(--brand-hue));
-  --muted-foreground: oklch(0.72 0.02 var(--brand-hue));
-  --accent: oklch(0.34 0.04 var(--brand-hue));
-  --accent-foreground: oklch(0.95 0.01 var(--brand-hue));
+  /* --card sits above --background here, which is what keeps borderless cards
+     readable in dark mode where a drop shadow does almost nothing. */
+  --workspace: oklch(0.2 0.004 95);
+  --background: oklch(0.2 0.004 95);
+  --foreground: oklch(0.95 0.004 95);
+  --card: oklch(0.235 0.005 95);
+  --card-foreground: oklch(0.95 0.004 95);
+  --popover: oklch(0.235 0.005 95);
+  --popover-foreground: oklch(0.95 0.004 95);
+  --primary: oklch(0.93 0.005 95);
+  --primary-foreground: oklch(0.2 0.006 95);
+  --secondary: oklch(0.28 0.005 95);
+  --secondary-foreground: oklch(0.95 0.004 95);
+  --muted: oklch(0.28 0.005 95);
+  --muted-foreground: oklch(0.72 0.006 95);
+  --accent: oklch(0.3 0.006 95);
+  --accent-foreground: oklch(0.95 0.004 95);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.696 0.17 162.48);
@@ -87,24 +121,32 @@
   --money-in: oklch(0.696 0.17 162.48);
   --money-out: oklch(0.712 0.194 13.428);
   --inventory: oklch(0.769 0.188 70.08);
+  --banking: oklch(0.685 0.169 237.323);
+  --banking-foreground: oklch(0.392 0.09 240.876);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.58 0.1 var(--brand-hue));
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --shell-canvas: oklch(0.17 0.03 var(--brand-hue));
-  --sidebar: oklch(0.24 0.05 var(--brand-hue));
-  --sidebar-foreground: oklch(0.94 0.01 var(--brand-hue));
-  --sidebar-primary: oklch(0.62 0.14 var(--brand-hue));
-  --sidebar-primary-foreground: oklch(0.99 0.005 var(--brand-hue));
-  --sidebar-accent: oklch(0.31 0.045 var(--brand-hue));
-  --sidebar-accent-foreground: oklch(0.96 0.01 var(--brand-hue));
-  --sidebar-border: oklch(0.36 0.04 var(--brand-hue));
-  --sidebar-ring: oklch(0.58 0.1 var(--brand-hue));
-  --sidebar-active: oklch(0.37 0.065 var(--brand-hue));
+  --ring: oklch(0.7 0.006 95);
+  /* Dark: a drop shadow alone barely registers, so the card keeps a faint
+     top-light edge and a deeper cast shadow. */
+  --elevation-edge: oklch(1 0 0 / 8%);
+  --elevation-key: oklch(0 0 0 / 40%);
+  --elevation-ambient: oklch(0 0 0 / 32%);
+  --chart-1: var(--money-in);
+  --chart-2: var(--money-out);
+  --chart-3: var(--gst);
+  --chart-4: var(--inventory);
+  --chart-5: var(--banking);
+  --shell-canvas: oklch(0.15 0.004 95);
+  --sidebar: oklch(0.15 0.004 95);
+  --sidebar-foreground: oklch(0.8 0.006 95);
+  --sidebar-primary: oklch(0.93 0.005 95);
+  --sidebar-primary-foreground: oklch(0.2 0.006 95);
+  --sidebar-accent: oklch(0.225 0.005 95);
+  --sidebar-accent-foreground: oklch(0.96 0.004 95);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.7 0.006 95);
+  --sidebar-active: oklch(0.275 0.006 95);
+  --sidebar-active-foreground: oklch(0.97 0.004 95);
 }
 
 @theme inline {
@@ -137,6 +179,8 @@
   --color-money-in: var(--money-in);
   --color-money-out: var(--money-out);
   --color-inventory: var(--inventory);
+  --color-banking: var(--banking);
+  --color-banking-foreground: var(--banking-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -152,6 +196,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-hero: var(--radius-hero);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -206,19 +251,26 @@ body {
   html {
     @apply font-sans;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
-/* Monday-style app shell — flush sidebar + white workspace */
+/* App shell — the sidebar sits flat on the shell tint and the workspace floats
+   above it as a card, so chrome recedes and dense data reads as the subject. */
 [data-slot='sidebar-wrapper'] {
-  @apply min-h-svh bg-[var(--workspace)];
+  @apply min-h-svh bg-[var(--shell-canvas)];
 }
 
 [data-slot='sidebar-inner'] {
-  background: linear-gradient(
-    180deg,
-    oklch(0.33 0.07 var(--brand-hue)) 0%,
-    oklch(0.27 0.065 var(--brand-hue)) 100%
-  );
+  background: var(--sidebar);
   @apply overflow-hidden ring-0;
 }
 
@@ -238,21 +290,44 @@ body {
 
 [data-slot='sidebar-inset'] {
   background: var(--workspace);
-  @apply min-h-svh shadow-none ring-0;
+  @apply md:ring-1 md:ring-border/60;
 }
 
 [data-slot='sidebar-group-label'] {
   @apply text-sidebar-foreground/55 uppercase tracking-wide;
 }
 
+[data-slot='sidebar-menu-button'] {
+  @apply transition-colors duration-150;
+}
+
 [data-slot='sidebar-menu-button'][data-active='true'] {
   background: var(--sidebar-active);
-  @apply font-medium text-white;
+  color: var(--sidebar-active-foreground);
+  @apply font-medium;
 }
 
 [data-slot='sidebar-menu-sub-button'][data-active='true'] {
-  background: color-mix(in oklch, var(--sidebar-active) 85%, var(--sidebar));
-  @apply font-medium text-white;
+  background: color-mix(in oklch, var(--sidebar-active) 70%, var(--sidebar));
+  color: var(--sidebar-active-foreground);
+  @apply font-medium;
+}
+
+/* Nav icons gain a duotone fill on hover/active — the same 16-20% tint the
+   hero surfaces use, so the stroke stays readable instead of turning into a
+   solid blob. `:first-child` keeps the trailing collapsible chevron unfilled,
+   since an open chevron path fills as a triangle. */
+[data-slot='sidebar-menu-button'] > svg:first-child,
+[data-slot='sidebar-menu-sub-button'] > svg:first-child {
+  fill: transparent;
+  transition: fill var(--duration-fast) var(--ease-precise);
+}
+
+[data-slot='sidebar-menu-button']:hover > svg:first-child,
+[data-slot='sidebar-menu-button'][data-active='true'] > svg:first-child,
+[data-slot='sidebar-menu-sub-button']:hover > svg:first-child,
+[data-slot='sidebar-menu-sub-button'][data-active='true'] > svg:first-child {
+  fill: color-mix(in oklch, currentColor 20%, transparent);
 }
 
 [data-slot='sidebar-menu-sub'] {
@@ -263,12 +338,64 @@ body {
   @apply text-sidebar-foreground/60;
 }
 
-.dark [data-slot='sidebar-inner'] {
-  background: linear-gradient(
-    180deg,
-    oklch(0.27 0.055 var(--brand-hue)) 0%,
-    oklch(0.21 0.05 var(--brand-hue)) 100%
-  );
+/* Glass surfaces — reserved for command palette, modals/sheets, toasts, and
+   the top app-bar once the page has scrolled. Never applied to tables,
+   ledgers, voucher entry grids, or everyday popovers/selects/menus. See
+   DESIGN.md. */
+[data-slot='dialog-content'],
+[data-slot='sheet-content'] {
+  background: color-mix(in oklch, var(--popover) 92%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+[data-app-header][data-scrolled='true'] {
+  background: color-mix(in oklch, var(--workspace) 78%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  @apply border-b border-border/70 shadow-xs;
+}
+
+.cn-toast {
+  background: color-mix(in oklch, var(--popover) 90%, transparent) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Hero surfaces: dashboard priority cards and empty/onboarding states get the
+   larger radius + duotone icon language. Dense data surfaces intentionally
+   stay flat and tight — see [data-ui='data'] rules below. */
+[data-hero-surface] {
+  border-radius: var(--radius-hero);
+}
+
+.icon-duotone {
+  color: var(--icon-tone, var(--foreground));
+}
+
+.icon-duotone [data-icon-fill] {
+  fill: color-mix(in oklch, var(--icon-tone, var(--foreground)) 16%, transparent);
+  stroke: none;
+}
+
+.icon-duotone [data-icon-stroke] {
+  stroke: var(--icon-tone, var(--foreground));
+  fill: none;
+}
+
+@keyframes count-up-fade {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-count-up {
+  animation: count-up-fade var(--duration-base) var(--ease-precise) both;
 }
 
 /* UI density: chrome = nav, titles, primary actions; data = tables and grids */

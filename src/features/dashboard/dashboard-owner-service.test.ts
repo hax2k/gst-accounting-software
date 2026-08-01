@@ -3,17 +3,28 @@ import { describe, expect, test } from 'vitest'
 import { InMemoryLedgerAccountRepository } from '#/features/accounting/ledger-account-store.ts'
 import { InMemoryLedgerPostingRepository } from '#/features/accounting/ledger-posting-store.ts'
 import { postLedgerEntry } from '#/features/accounting/posting-engine.ts'
-import { getOwnerDashboardSnapshot } from '#/features/dashboard/dashboard-owner-service.ts'
+import {
+  getOwnerDashboardSnapshot,
+  rollUpOverdueParties,
+} from '#/features/dashboard/dashboard-owner-service.ts'
 import {
   recordPurchaseSummary,
   recordSalesSummary,
 } from '#/features/dashboard/dashboard-summary-service.ts'
 import { InMemoryDashboardSummaryRepository } from '#/features/dashboard/dashboard-store.ts'
+import {
+  InMemoryItemRepository,
+  InMemoryStockStore,
+} from '#/features/inventory/inventory-store.ts'
+import { recordStockMovement } from '#/features/inventory/stock-movement-service.ts'
 import { InMemoryPurchaseBillRepository } from '#/features/purchases/purchase-bill-store.ts'
 import { InMemoryPartyRepository } from '#/features/parties/party-store.ts'
 import { InMemorySalesInvoiceRepository } from '#/features/sales/sales-invoice-store.ts'
 
+import type { AgeingRow } from '#/features/accounting/ageing-service.ts'
+import type { Capability } from '#/features/companies/membership-service.ts'
 import type { ExpenseRecord, ExpenseRepository } from '#/features/expenses/expense-service.ts'
+import type { ItemRecord } from '#/features/inventory/item-service.ts'
 import type { SalesInvoiceRecord } from '#/features/sales/sales-invoice-service.ts'
 import type { PurchaseBillRecord } from '#/features/purchases/purchase-bill-service.ts'
 
@@ -120,6 +131,121 @@ function baseBill(
     ...overrides,
   }
 }
+
+function baseItem(overrides: Partial<ItemRecord> = {}): ItemRecord {
+  return {
+    id: 'item-1',
+    companyId: 'company-1',
+    name: 'Copper Wire 2.5mm',
+    alias: '',
+    itemGroup: '',
+    hsnCode: '8544',
+    gstRate: '18',
+    baseUnit: 'MTR',
+    alternateUnit: '',
+    conversionFactor: '1',
+    mrp: '0.00',
+    reorderLevel: '25',
+    purchaseRate: '40.00',
+    saleRate: '60.00',
+    tracksInventory: true,
+    createdAt: new Date(),
+    ...overrides,
+  }
+}
+
+function ageingRow(overrides: Partial<AgeingRow> = {}): AgeingRow {
+  return {
+    partyId: 'party-1',
+    partyName: 'Acme Traders',
+    documentNumber: 'INV-1',
+    documentDate: '2026-06-01',
+    dueDate: '2026-06-14',
+    outstandingAmount: '1000.00',
+    daysOutstanding: 43,
+    daysPastDue: 30,
+    bucket: '1-30',
+    ...overrides,
+  }
+}
+
+describe('rollUpOverdueParties', () => {
+  test('collapses a party\u2019s overdue documents into one signal', () => {
+    const signals = rollUpOverdueParties([
+      ageingRow({ documentNumber: 'INV-1', outstandingAmount: '1000.10', daysPastDue: 12 }),
+      ageingRow({ documentNumber: 'INV-2', outstandingAmount: '2000.25', daysPastDue: 45 }),
+      ageingRow({ documentNumber: 'INV-3', outstandingAmount: '0.05', daysPastDue: 3 }),
+    ])
+
+    expect(signals).toHaveLength(1)
+    expect(signals[0]).toEqual({
+      partyId: 'party-1',
+      partyName: 'Acme Traders',
+      documentCount: 3,
+      outstandingAmount: '3000.40',
+      maxDaysPastDue: 45,
+    })
+  })
+
+  test('excludes documents that are not yet past due', () => {
+    const signals = rollUpOverdueParties([
+      ageingRow({
+        documentNumber: 'INV-1',
+        outstandingAmount: '1000.00',
+        daysPastDue: 0,
+        bucket: 'not-due',
+      }),
+      ageingRow({ documentNumber: 'INV-2', outstandingAmount: '250.00', daysPastDue: 5 }),
+    ])
+
+    expect(signals).toEqual([
+      {
+        partyId: 'party-1',
+        partyName: 'Acme Traders',
+        documentCount: 1,
+        outstandingAmount: '250.00',
+        maxDaysPastDue: 5,
+      },
+    ])
+  })
+
+  test('produces no signal for a party whose documents are all not yet due', () => {
+    const signals = rollUpOverdueParties([
+      ageingRow({
+        partyId: 'party-9',
+        partyName: 'Future Co',
+        daysPastDue: 0,
+        bucket: 'not-due',
+      }),
+      ageingRow({
+        partyId: 'party-9',
+        partyName: 'Future Co',
+        documentNumber: 'INV-2',
+        daysPastDue: 0,
+        bucket: 'not-due',
+      }),
+    ])
+
+    expect(signals).toEqual([])
+  })
+
+  test('keeps parties separate', () => {
+    const signals = rollUpOverdueParties([
+      ageingRow({ partyId: 'party-1', outstandingAmount: '100.00', daysPastDue: 4 }),
+      ageingRow({
+        partyId: 'party-2',
+        partyName: 'Metro Supplies',
+        outstandingAmount: '200.00',
+        daysPastDue: 9,
+      }),
+    ])
+
+    expect(signals.map((signal) => signal.partyId)).toEqual([
+      'party-1',
+      'party-2',
+    ])
+  })
+})
 
 describe('getOwnerDashboardSnapshot', () => {
   test('builds today pulse, due today, trend, and cash balance', async () => {
@@ -234,6 +360,8 @@ describe('getOwnerDashboardSnapshot', () => {
         expenses,
         postings,
         ledgers,
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
       },
       companyId,
       asOfDate,
@@ -256,7 +384,317 @@ describe('getOwnerDashboardSnapshot', () => {
     expect(snapshot.trend.at(-2)?.purchases).toBe('1200.00')
     expect(snapshot.monthCompare.current.salesTotal).toBe('5000.00')
     expect(snapshot.monthCompare.previous.salesTotal).toBe('0.00')
-    expect(snapshot.gstMtd.outputGst).toBe('180.00')
-    expect(snapshot.gstMtd.inputGst).toBe('90.00')
+    expect(snapshot.gstMtd?.outputGst).toBe('180.00')
+    expect(snapshot.gstMtd?.inputGst).toBe('90.00')
+  })
+
+  test('counts a document as overdue from the first day past its due date', async () => {
+    const companyId = 'company-1'
+    const asOfDate = '2026-07-14'
+    const invoices = new InMemorySalesInvoiceRepository()
+    const bills = new InMemoryPurchaseBillRepository()
+
+    await invoices.create(
+      baseInvoice({ id: 'inv-not-due', dueDate: '2026-07-20' }),
+    )
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-one-day-late',
+        invoiceNumber: 'INV-2',
+        dueDate: '2026-07-13',
+      }),
+    )
+    await bills.create(baseBill({ id: 'bill-not-due', dueDate: '2026-07-20' }))
+    await bills.create(
+      baseBill({
+        id: 'bill-one-day-late',
+        supplierBillNumber: 'PB-2',
+        dueDate: '2026-07-13',
+      }),
+    )
+
+    const snapshot = await getOwnerDashboardSnapshot(
+      {
+        summaries: new InMemoryDashboardSummaryRepository(),
+        invoices,
+        bills,
+        parties: new InMemoryPartyRepository(),
+        expenses: new InMemoryExpenseRepository(),
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
+      },
+      companyId,
+      asOfDate,
+      '24',
+    )
+
+    expect(snapshot.ageing?.receivables['not-due']).toBe('1180.00')
+    expect(snapshot.ageing?.receivables['1-30']).toBe('1180.00')
+    expect(snapshot.ageing?.payables['not-due']).toBe('590.00')
+    expect(snapshot.ageing?.payables['1-30']).toBe('590.00')
+    expect(snapshot.overdue.invoiceCount).toBe(1)
+    expect(snapshot.overdue.billCount).toBe(1)
+  })
+
+  test('ranks overdue money and GST into the attention queue', async () => {
+    const companyId = 'company-1'
+    const asOfDate = '2026-07-14'
+    const invoices = new InMemorySalesInvoiceRepository()
+    const parties = new InMemoryPartyRepository()
+
+    await parties.create({
+      id: 'party-1',
+      companyId,
+      name: 'Acme Traders',
+      partyType: 'customer',
+      gstin: null,
+      stateCode: '24',
+      creditLimit: null,
+      paymentTermsDays: 30,
+      receivableAccountId: 'recv-1',
+      payableAccountId: null,
+      createdAt: new Date(),
+    })
+
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-late-1',
+        invoiceNumber: 'INV-1',
+        invoiceDate: '2026-07-01',
+        dueDate: '2026-07-01',
+        outstandingAmount: '200000.00',
+      }),
+    )
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-late-2',
+        invoiceNumber: 'INV-2',
+        invoiceDate: '2026-07-05',
+        dueDate: '2026-07-05',
+        outstandingAmount: '100000.00',
+      }),
+    )
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-not-due',
+        invoiceNumber: 'INV-3',
+        invoiceDate: '2026-07-10',
+        dueDate: '2026-07-20',
+        outstandingAmount: '50000.00',
+      }),
+    )
+
+    const snapshot = await getOwnerDashboardSnapshot(
+      {
+        summaries: new InMemoryDashboardSummaryRepository(),
+        invoices,
+        bills: new InMemoryPurchaseBillRepository(),
+        parties,
+        expenses: new InMemoryExpenseRepository(),
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
+      },
+      companyId,
+      asOfDate,
+      '24',
+      {
+        capabilities: ['view', 'view_reports', 'post_payment', 'manage_gst'],
+      },
+    )
+
+    const receivable = snapshot.attention[0]
+    expect(receivable.kind).toBe('overdue-receivable')
+    expect(receivable.id).toBe('overdue-receivable:party-1')
+    expect(receivable.title).toBe('Collect from Acme Traders')
+    expect(receivable.detail).toContain('2 invoices overdue')
+    expect(receivable.amount).toBe('300000.00')
+    expect(receivable.actionable).toBe(true)
+
+    const gst = snapshot.attention.find((item) => item.kind === 'gst-due')
+    expect(gst?.amount).toBe(snapshot.gstMtd?.netGstPayable)
+    expect(gst?.title).toContain(snapshot.monthCompare.currentLabel)
+    expect(gst?.detail).toBe('Filing due date not set')
+
+    const scores = snapshot.attention.map((item) => item.score)
+    expect(scores).toEqual([...scores].sort((left, right) => right - left))
+  })
+
+  test('withholds money and GST rows from a caller without view_reports', async () => {
+    const companyId = 'company-1'
+    const invoices = new InMemorySalesInvoiceRepository()
+
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-late',
+        invoiceDate: '2026-07-01',
+        dueDate: '2026-07-01',
+        outstandingAmount: '200000.00',
+      }),
+    )
+
+    const snapshot = await getOwnerDashboardSnapshot(
+      {
+        summaries: new InMemoryDashboardSummaryRepository(),
+        invoices,
+        bills: new InMemoryPurchaseBillRepository(),
+        parties: new InMemoryPartyRepository(),
+        expenses: new InMemoryExpenseRepository(),
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
+      },
+      companyId,
+      '2026-07-14',
+      '24',
+      { includeReports: false, capabilities: ['view', 'post_payment'] },
+    )
+
+    expect(snapshot.ageing).toBeUndefined()
+    expect(snapshot.gstMtd).toBeUndefined()
+    expect(snapshot.attention).toEqual([])
+  })
+})
+
+describe('getOwnerDashboardSnapshot low stock', () => {
+  const companyId = 'company-1'
+  const asOfDate = '2026-07-14'
+
+  type StockedItem = {
+    item: ItemRecord
+    /** Received through a stock movement, the only way stock may change. */
+    receivedQuantity?: string
+  }
+
+  async function snapshotWithStock(
+    stocked: Array<StockedItem>,
+    overrides: {
+      invoices?: InMemorySalesInvoiceRepository
+      includeReports?: boolean
+      capabilities?: Array<Capability>
+    } = {},
+  ) {
+    const items = new InMemoryItemRepository()
+    const stock = new InMemoryStockStore()
+
+    for (const entry of stocked) {
+      await items.create(entry.item)
+      if (entry.receivedQuantity) {
+        await recordStockMovement(stock, stock, {
+          companyId: entry.item.companyId,
+          itemId: entry.item.id,
+          movementType: 'opening',
+          quantity: entry.receivedQuantity,
+          unit: entry.item.baseUnit,
+          referenceType: 'opening_stock',
+          referenceId: entry.item.id,
+          occurredOn: '2026-07-01',
+        })
+      }
+    }
+
+    return getOwnerDashboardSnapshot(
+      {
+        summaries: new InMemoryDashboardSummaryRepository(),
+        invoices: overrides.invoices ?? new InMemorySalesInvoiceRepository(),
+        bills: new InMemoryPurchaseBillRepository(),
+        parties: new InMemoryPartyRepository(),
+        expenses: new InMemoryExpenseRepository(),
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items,
+        stockBalances: stock,
+      },
+      companyId,
+      asOfDate,
+      '24',
+      {
+        includeReports: overrides.includeReports,
+        capabilities: overrides.capabilities ?? [
+          'view',
+          'view_reports',
+          'manage_inventory',
+          'post_payment',
+          'manage_gst',
+        ],
+      },
+    )
+  }
+
+  test('raises a signal for an item below its reorder level', async () => {
+    const snapshot = await snapshotWithStock([
+      { item: baseItem({ reorderLevel: '25' }), receivedQuantity: '8' },
+    ])
+
+    const lowStock = snapshot.attention.filter(
+      (item) => item.kind === 'low-stock',
+    )
+    expect(lowStock).toHaveLength(1)
+    expect(lowStock[0].id).toBe('low-stock:item-1')
+    expect(lowStock[0].title).toBe('Copper Wire 2.5mm is below reorder level')
+    expect(lowStock[0].detail).toBe('8 in stock · reorder at 25')
+    expect(lowStock[0].to).toBe('/app/inventory')
+    expect(lowStock[0].search).toEqual({ item: 'item-1' })
+    expect(lowStock[0].actionable).toBe(true)
+  })
+
+  test('raises a signal for an item that is out of stock', async () => {
+    const snapshot = await snapshotWithStock([
+      { item: baseItem({ reorderLevel: '25' }) },
+    ])
+
+    const lowStock = snapshot.attention.filter(
+      (item) => item.kind === 'low-stock',
+    )
+    expect(lowStock).toHaveLength(1)
+    expect(lowStock[0].title).toBe('Copper Wire 2.5mm is out of stock')
+    expect(lowStock[0].detail).toBe('0 in stock · reorder at 25')
+  })
+
+  test('raises no signal for an item with no reorder level set', async () => {
+    const snapshot = await snapshotWithStock([
+      { item: baseItem({ id: 'item-zero', reorderLevel: '0' }) },
+      { item: baseItem({ id: 'item-unset', reorderLevel: '' }) },
+    ])
+
+    expect(snapshot.attention).toEqual([])
+  })
+
+  test('raises no signal for an item comfortably above its reorder level', async () => {
+    const snapshot = await snapshotWithStock([
+      { item: baseItem({ reorderLevel: '25' }), receivedQuantity: '100' },
+    ])
+
+    expect(snapshot.attention).toEqual([])
+  })
+
+  test('reaches a caller without view_reports, unlike money and GST rows', async () => {
+    const invoices = new InMemorySalesInvoiceRepository()
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-late',
+        invoiceDate: '2026-07-01',
+        dueDate: '2026-07-01',
+        outstandingAmount: '200000.00',
+      }),
+    )
+
+    const snapshot = await snapshotWithStock(
+      [{ item: baseItem({ reorderLevel: '25' }), receivedQuantity: '8' }],
+      {
+        invoices,
+        includeReports: false,
+        capabilities: ['view', 'manage_inventory'],
+      },
+    )
+
+    expect(snapshot.ageing).toBeUndefined()
+    expect(snapshot.gstMtd).toBeUndefined()
+    expect(snapshot.attention.map((item) => item.kind)).toEqual(['low-stock'])
+    expect(snapshot.attention[0].actionable).toBe(true)
   })
 })

@@ -87,7 +87,36 @@ cp .env.example .env.local
 | `BETTER_AUTH_URL` | Yes | `http://localhost:3000` locally |
 | `GOOGLE_CLIENT_ID` | No | Google sign-in (optional) |
 | `GOOGLE_CLIENT_SECRET` | No | Google sign-in (optional) |
+| `VITE_ENABLE_GOOGLE_AUTH` | No | Google buttons show by default; `false` hides them (build-time) |
 | `RESEND_API_KEY` | No | Email (optional in dev) |
+
+#### Enabling Google sign-in
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
+   create an **OAuth 2.0 Client ID** of type *Web application*.
+2. Add an authorised redirect URI of `<BETTER_AUTH_URL>/api/auth/callback/google`
+   — `http://localhost:3000/api/auth/callback/google` for local dev, plus your
+   deployed URL for production.
+3. Put the client ID/secret in `.env.local`. The buttons are already visible —
+   they show by default so a fresh clone needs no extra flag.
+4. For production, set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` as
+   Cloudflare Worker secrets.
+
+Until the two secrets are set the buttons still render, and clicking one shows
+a "Google sign-in is unavailable" toast rather than failing silently.
+
+#### Hiding the Google buttons
+
+`VITE_ENABLE_GOOGLE_AUTH=false` hides them. Vite inlines it at build time, so a
+Cloudflare Worker secret will not work — it has to be set for the build:
+
+```bash
+VITE_ENABLE_GOOGLE_AUTH=false bun run build
+```
+
+`bun run deploy` already does this, so the deployed Worker ships without the
+buttons. If you deploy some other way (Cloudflare Workers Builds, or your own
+CI), set `VITE_ENABLE_GOOGLE_AUTH=false` as a build-time variable there too.
 
 ### 4. Set up the database
 
@@ -204,6 +233,11 @@ Go to **Workers & Pages → your worker → Settings → Variables and secrets**
 | `BETTER_AUTH_URL` | `https://your-app.workers.dev` (your live Workers URL) |
 
 Optional: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`
+
+`bun run deploy` builds with the Google buttons hidden. To show them on the
+deployed app, run `bun run build && wrangler deploy` instead of `bun run deploy`
+— the Google secrets above have no effect on their own, because the toggle is
+inlined into the client bundle at build time.
 
 ### 4. Verify
 

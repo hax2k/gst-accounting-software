@@ -36,23 +36,8 @@ import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
 import { toastActionError } from '#/features/app-shell/form-error.ts'
 import { requireSelection, requireWorkspace } from '#/lib/form-validation.ts'
+import { workflowStatusBadgeIntent } from '#/lib/badge-intent.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
-
-function workflowStatusBadgeVariant(status: string) {
-  if (status === 'open') {
-    return 'info' as const
-  }
-
-  if (status === 'converted' || status === 'closed') {
-    return 'success' as const
-  }
-
-  if (status === 'cancelled') {
-    return 'destructive' as const
-  }
-
-  return 'outline' as const
-}
 
 export function PurchaseGrnsPanel() {
   const trpc = useTRPC()
@@ -215,7 +200,7 @@ export function PurchaseGrnsPanel() {
                     <TableCell>{grn.grnNumber}</TableCell>
                     <TableCell>{grn.grnDate}</TableCell>
                     <TableCell>
-                      <Badge variant={workflowStatusBadgeVariant(grn.status)}>
+                      <Badge variant={workflowStatusBadgeIntent(grn.status)}>
                         {grn.status}
                       </Badge>
                     </TableCell>

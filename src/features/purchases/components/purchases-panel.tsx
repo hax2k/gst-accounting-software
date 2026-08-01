@@ -40,12 +40,20 @@ import {
   nextVoucherListCursor,
   VOUCHER_LIST_PAGE_SIZE,
 } from '#/features/documents/voucher-list-pagination.ts'
+import { ActiveFilterChip } from '#/features/app-shell/components/active-filter-chip.tsx'
 import { WorkspacePage } from '#/features/app-shell/components/workspace-page.tsx'
 import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
+import { resolveListFilter } from '#/features/app-shell/list-filter.ts'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
 
-export function PurchasesPanel() {
+export function PurchasesPanel({
+  partyId,
+  onClearPartyFilter,
+}: {
+  partyId?: string
+  onClearPartyFilter?: () => void
+}) {
   const trpc = useTRPC()
   const { companyId, isReady } = useWorkspace()
   const [query, setQuery] = React.useState('')
@@ -57,11 +65,27 @@ export function PurchasesPanel() {
   const [previewOpen, setPreviewOpen] = React.useState(false)
   const resolvedCompanyId = companyId ?? '00000000-0000-4000-8000-000000000099'
 
+  const partiesQuery = useQuery({
+    ...trpc.parties.list.queryOptions({
+      companyId: resolvedCompanyId,
+    }),
+    enabled: Boolean(companyId) && isReady,
+  })
+  const partyFilter = resolveListFilter(
+    partyId,
+    (partiesQuery.data ?? []).map((party) => ({
+      id: party.id,
+      label: party.name,
+    })),
+    partiesQuery.isSuccess,
+  )
+
   const purchasesQuery = useInfiniteQuery(
     trpc.purchases.list.infiniteQueryOptions(
       {
         companyId: resolvedCompanyId,
         limit: VOUCHER_LIST_PAGE_SIZE,
+        partyId: partyFilter.id,
         paymentStatus: filter === 'all' ? undefined : filter,
         search: query.trim() || undefined,
       },
@@ -76,13 +100,6 @@ export function PurchasesPanel() {
       },
     ),
   )
-  const partiesQuery = useQuery({
-    ...trpc.parties.list.queryOptions({
-      companyId: resolvedCompanyId,
-    }),
-    enabled: Boolean(companyId) && isReady,
-  })
-
   const partyName = React.useMemo(() => {
     const map = new Map(
       (partiesQuery.data ?? []).map((party) => [party.id, party.name]),
@@ -124,19 +141,27 @@ export function PurchasesPanel() {
             <CardDescription>{rows.length} loaded vouchers</CardDescription>
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <Tabs
-              onValueChange={(value) =>
-                setFilter(value as 'all' | 'Paid' | 'Part paid' | 'Pending')
-              }
-              value={filter}
-            >
-              <ScrollableTabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="Pending">Pending</TabsTrigger>
-                <TabsTrigger value="Part paid">Part paid</TabsTrigger>
-                <TabsTrigger value="Paid">Paid</TabsTrigger>
-              </ScrollableTabsList>
-            </Tabs>
+            <div className="flex flex-wrap items-center gap-2">
+              <Tabs
+                onValueChange={(value) =>
+                  setFilter(value as 'all' | 'Paid' | 'Part paid' | 'Pending')
+                }
+                value={filter}
+              >
+                <ScrollableTabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="Pending">Pending</TabsTrigger>
+                  <TabsTrigger value="Part paid">Part paid</TabsTrigger>
+                  <TabsTrigger value="Paid">Paid</TabsTrigger>
+                </ScrollableTabsList>
+              </Tabs>
+              {partyFilter.id && onClearPartyFilter ? (
+                <ActiveFilterChip
+                  label={partyFilter.label ?? partyName(partyFilter.id)}
+                  onClear={onClearPartyFilter}
+                />
+              ) : null}
+            </div>
             <SearchInput
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search bill or supplier"
@@ -190,7 +215,9 @@ export function PurchasesPanel() {
                     <TableCell>{row.dueDate}</TableCell>
                     <TableCell>{formatInr(row.taxableAmount)}</TableCell>
                     <TableCell>{formatInr(row.totalGstAmount)}</TableCell>
-                    <TableCell>{formatInr(row.totalAmount)}</TableCell>
+                    <TableCell className="font-medium text-money-out">
+                      {formatInr(row.totalAmount)}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={paymentStatusBadgeIntent(row.paymentStatus)}

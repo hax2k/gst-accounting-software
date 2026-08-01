@@ -25,13 +25,15 @@ const snapshot = {
   },
   ageing: {
     receivables: {
-      '0-30': '1000.00',
+      'not-due': '1000.00',
+      '1-30': '400.00',
       '31-60': '500.00',
       '61-90': '300.00',
       '90+': '200.00',
     },
     payables: {
-      '0-30': '1500.00',
+      'not-due': '1500.00',
+      '1-30': '600.00',
       '31-60': '1000.00',
       '61-90': '300.00',
       '90+': '200.00',
@@ -115,11 +117,35 @@ describe('mapOwnerSnapshotMetrics', () => {
 })
 
 describe('getOverdueTotals', () => {
-  it('sums overdue ageing buckets excluding current', () => {
+  it('sums every past-due bucket, including the freshly overdue 1-30 window', () => {
     expect(getOverdueTotals(snapshot)).toEqual({
-      receivables: 1000,
-      payables: 1500,
+      receivables: 1400,
+      payables: 2100,
     })
+  })
+
+  it('excludes the not-due bucket', () => {
+    expect(
+      getOverdueTotals({
+        ...snapshot,
+        ageing: {
+          receivables: {
+            'not-due': '9000.00',
+            '1-30': '0.00',
+            '31-60': '0.00',
+            '61-90': '0.00',
+            '90+': '0.00',
+          },
+          payables: {
+            'not-due': '7000.00',
+            '1-30': '0.00',
+            '31-60': '0.00',
+            '61-90': '0.00',
+            '90+': '0.00',
+          },
+        },
+      }),
+    ).toEqual({ receivables: 0, payables: 0 })
   })
 })
 

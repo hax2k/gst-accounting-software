@@ -189,6 +189,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     void navigate({ to: '/login' })
   }
 
+  const scrollRef = React.useRef<HTMLDivElement>(null)
+  const [scrolled, setScrolled] = React.useState(false)
+  React.useEffect(() => {
+    const node = scrollRef.current
+    if (!node) return
+    const handleScroll = () => setScrolled(node.scrollTop > 4)
+    handleScroll()
+    node.addEventListener('scroll', handleScroll, { passive: true })
+    return () => node.removeEventListener('scroll', handleScroll)
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <SidebarProvider>
@@ -196,7 +207,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="print:hidden"
           collapsible="icon"
           data-ui="chrome"
-          variant="sidebar"
+          variant="inset"
         >
           <SidebarHeader>
             <SidebarMenu>
@@ -204,7 +215,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <SidebarMenuButton size="lg" tooltip="Company switcher">
-                      <div className="grid size-8 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                      <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                         <Building2Icon className="size-4" />
                       </div>
                       <div className="grid flex-1 text-left leading-tight">
@@ -310,7 +321,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SidebarRail />
         </Sidebar>
         <SidebarInset className="min-h-0 min-w-0 overflow-hidden">
-          <header className="flex h-11 shrink-0 items-center gap-1 px-2 sm:gap-2 sm:px-3 print:hidden">
+          <header
+            className="sticky top-0 z-10 flex h-11 shrink-0 items-center gap-1 bg-background px-2 transition-colors duration-(--duration-base) sm:gap-2 sm:px-3 print:hidden"
+            data-app-header=""
+            data-scrolled={scrolled}
+          >
             <SidebarTrigger className="-ml-1" />
             <div className="flex-1" />
             <Button
@@ -362,7 +377,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
-          <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
+          <div
+            className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto"
+            ref={scrollRef}
+          >
             {children}
           </div>
         </SidebarInset>

@@ -340,7 +340,7 @@ export function TeamMembersPanel() {
             </span>
             {invitations.map((invitation) => (
               <div
-                className="flex items-center justify-between gap-3 rounded-md border p-2"
+                className="flex items-center justify-between gap-3 rounded-md bg-muted/40 p-2"
                 key={invitation.email}
               >
                 <div className="flex flex-col">
