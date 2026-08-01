@@ -416,8 +416,9 @@ function compareItems(left: AttentionItem, right: AttentionItem) {
 export function buildAttentionQueue(
   input: AttentionQueueInput,
 ): Array<AttentionItem> {
+  // Fail closed: do not invent a `view` grant. Callers that omit capabilities
+  // (or pass []) must see an empty queue rather than operational rows.
   const granted = new Set<Capability>(input.capabilities)
-  granted.add('view')
 
   const candidates: Array<AttentionCandidate> = [
     ...(input.gst ? gstItem(input.gst, input.asOf) : []),

@@ -1,3 +1,9 @@
+/**
+ * Keep in sync with `src/features/accounting/ageing-service.ts`.
+ * Mobile cannot import the web `#/*` module graph, so the bucket labels are
+ * duplicated here on purpose — changing one without the other will show blank
+ * titles on the reports screen.
+ */
 export type AgeingBucketLabel =
   | 'not-due'
   | '1-30'

@@ -18,10 +18,10 @@ export function GoogleSignInButton({ label }: { label: string }) {
       })
       if (error) {
         toast.error('Google sign-in is unavailable. Use email and password.')
-        setIsPending(false)
       }
     } catch {
       toast.error('Google sign-in failed. Try again or use email.')
+    } finally {
       setIsPending(false)
     }
   }

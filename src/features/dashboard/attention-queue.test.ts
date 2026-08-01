@@ -396,6 +396,35 @@ describe('attention queue ranking', () => {
     expect(buildAttentionQueue(input())).toEqual([])
   })
 
+  test('returns an empty queue when capabilities are omitted, even if signals arrive', () => {
+    const items = buildAttentionQueue(
+      input({
+        capabilities: [],
+        overdueReceivables: [
+          {
+            partyId: 'party-1',
+            partyName: 'Sharma Traders',
+            documentCount: 2,
+            outstandingAmount: '50000.00',
+            maxDaysPastDue: 12,
+          },
+        ],
+        lowStock: [
+          {
+            itemId: 'item-1',
+            itemName: 'Copper Wire 2.5mm',
+            availableQuantity: 0,
+            reorderLevel: 25,
+          },
+        ],
+        unreconciledBankCount: 4,
+        ocrDraftCount: 2,
+      }),
+    )
+
+    expect(items).toEqual([])
+  })
+
   test('never fabricates an item from zero valued signals', () => {
     const items = buildAttentionQueue(
       input({

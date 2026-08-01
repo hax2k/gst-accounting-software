@@ -366,6 +366,7 @@ describe('getOwnerDashboardSnapshot', () => {
       companyId,
       asOfDate,
       '24',
+      { includeReports: true, capabilities: ['view', 'view_reports'] },
     )
 
     expect(snapshot.today.salesTotal).toBe('5000.00')
@@ -428,6 +429,7 @@ describe('getOwnerDashboardSnapshot', () => {
       companyId,
       asOfDate,
       '24',
+      { includeReports: true, capabilities: ['view', 'view_reports'] },
     )
 
     expect(snapshot.ageing?.receivables['not-due']).toBe('1180.00')
@@ -502,6 +504,7 @@ describe('getOwnerDashboardSnapshot', () => {
       asOfDate,
       '24',
       {
+        includeReports: true,
         capabilities: ['view', 'view_reports', 'post_payment', 'manage_gst'],
       },
     )
@@ -558,6 +561,126 @@ describe('getOwnerDashboardSnapshot', () => {
     expect(snapshot.gstMtd).toBeUndefined()
     expect(snapshot.attention).toEqual([])
   })
+
+  test('withholds all financial figures when includeReports is false', async () => {
+    const companyId = 'company-1'
+    const asOfDate = '2026-07-14'
+    const summaries = new InMemoryDashboardSummaryRepository()
+    const invoices = new InMemorySalesInvoiceRepository()
+    const bills = new InMemoryPurchaseBillRepository()
+    const expenses = new InMemoryExpenseRepository([
+      {
+        id: 'exp-1',
+        companyId,
+        expenseDate: asOfDate,
+        narration: 'Fuel',
+        amount: '500.00',
+        expenseAccountId: 'expense-ledger',
+        paymentAccountId: 'cash',
+        ledgerEntryId: 'entry-exp',
+        createdAt: new Date(),
+      },
+    ])
+
+    await recordSalesSummary(summaries, {
+      companyId,
+      summaryDate: asOfDate,
+      salesAmount: '5000.00',
+      receivableAmount: '5000.00',
+      stockOutQuantity: '10',
+    })
+    await invoices.create(
+      baseInvoice({
+        dueDate: asOfDate,
+        outstandingAmount: '1180.00',
+      }),
+    )
+    await bills.create(baseBill({ dueDate: asOfDate }))
+
+    const snapshot = await getOwnerDashboardSnapshot(
+      {
+        summaries,
+        invoices,
+        bills,
+        parties: new InMemoryPartyRepository(),
+        expenses,
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
+      },
+      companyId,
+      asOfDate,
+      '24',
+      { includeReports: false, capabilities: ['view', 'manage_inventory'] },
+    )
+
+    expect(snapshot.ageing).toBeUndefined()
+    expect(snapshot.gstMtd).toBeUndefined()
+    expect(snapshot.today).toEqual({
+      salesTotal: '0.00',
+      purchaseTotal: '0.00',
+      moneyIn: '0.00',
+      moneyOut: '0.00',
+      expensesTotal: '0.00',
+      netCashFlow: '0.00',
+    })
+    expect(snapshot.balances).toEqual({
+      cashBankBalance: '0.00',
+      receivableTotal: '0.00',
+      payableTotal: '0.00',
+    })
+    expect(snapshot.dueToday).toEqual({ receivables: [], payables: [] })
+    expect(snapshot.todayExpenses).toEqual([])
+    expect(snapshot.overdue).toEqual({ invoiceCount: 0, billCount: 0 })
+    expect(snapshot.trend.every((day) => day.sales === '0.00')).toBe(true)
+    expect(snapshot.trend.every((day) => day.purchases === '0.00')).toBe(true)
+    expect(snapshot.monthCompare.current).toEqual({
+      salesTotal: '0.00',
+      purchaseTotal: '0.00',
+      expensesTotal: '0.00',
+    })
+    expect(snapshot.monthCompare.previous).toEqual({
+      salesTotal: '0.00',
+      purchaseTotal: '0.00',
+      expensesTotal: '0.00',
+    })
+  })
+
+  test('defaults includeReports to false so a forgotten option cannot leak report data', async () => {
+    const companyId = 'company-1'
+    const invoices = new InMemorySalesInvoiceRepository()
+    await invoices.create(
+      baseInvoice({
+        id: 'inv-late',
+        invoiceDate: '2026-07-01',
+        dueDate: '2026-07-01',
+        outstandingAmount: '200000.00',
+      }),
+    )
+
+    const snapshot = await getOwnerDashboardSnapshot(
+      {
+        summaries: new InMemoryDashboardSummaryRepository(),
+        invoices,
+        bills: new InMemoryPurchaseBillRepository(),
+        parties: new InMemoryPartyRepository(),
+        expenses: new InMemoryExpenseRepository(),
+        postings: new InMemoryLedgerPostingRepository(),
+        ledgers: new InMemoryLedgerAccountRepository(),
+        items: new InMemoryItemRepository(),
+        stockBalances: new InMemoryStockStore(),
+      },
+      companyId,
+      '2026-07-14',
+      '24',
+    )
+
+    expect(snapshot.ageing).toBeUndefined()
+    expect(snapshot.gstMtd).toBeUndefined()
+    expect(snapshot.balances.receivableTotal).toBe('0.00')
+    expect(snapshot.overdue.invoiceCount).toBe(0)
+  })
 })
 
 describe('getOwnerDashboardSnapshot low stock', () => {
@@ -613,7 +736,7 @@ describe('getOwnerDashboardSnapshot low stock', () => {
       asOfDate,
       '24',
       {
-        includeReports: overrides.includeReports,
+        includeReports: overrides.includeReports ?? true,
         capabilities: overrides.capabilities ?? [
           'view',
           'view_reports',
