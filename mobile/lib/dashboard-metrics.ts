@@ -1,8 +1,24 @@
-type AgeingBuckets = {
-  '0-30': string
-  '31-60': string
-  '61-90': string
-  '90+': string
+/**
+ * Keep in sync with `src/features/accounting/ageing-service.ts`.
+ * Mobile cannot import the web `#/*` module graph, so the bucket labels are
+ * duplicated here on purpose — changing one without the other will show blank
+ * titles on the reports screen.
+ */
+export type AgeingBucketLabel =
+  | 'not-due'
+  | '1-30'
+  | '31-60'
+  | '61-90'
+  | '90+'
+
+type AgeingBuckets = Record<AgeingBucketLabel, string>
+
+export const AGEING_BUCKET_DISPLAY_LABEL: Record<AgeingBucketLabel, string> = {
+  'not-due': 'Not due',
+  '1-30': '1-30 days',
+  '31-60': '31-60 days',
+  '61-90': '61-90 days',
+  '90+': '90+ days',
 }
 
 export type OwnerSnapshot = {
@@ -20,7 +36,8 @@ export type OwnerSnapshot = {
     payableTotal: string
     cashBankBalance: string
   }
-  ageing: {
+  /** Withheld for members without the `view_reports` capability. */
+  ageing?: {
     receivables: AgeingBuckets
     payables: AgeingBuckets
   }
@@ -47,7 +64,8 @@ export type OwnerSnapshot = {
       expensesPercent: string
     }
   }
-  gstMtd: {
+  /** Withheld for members without the `view_reports` capability. */
+  gstMtd?: {
     periodStart: string
     periodEnd: string
     outwardTaxableValue: string
@@ -120,8 +138,11 @@ export function mapOwnerSnapshotMetrics(snapshot: OwnerSnapshot): Array<Dashboar
   ]
 }
 
-function sumAgeingOverdue(buckets: AgeingBuckets) {
+/** Overdue is every bucket except `not-due`: one day late already counts. */
+function sumAgeingOverdue(buckets: AgeingBuckets | undefined) {
+  if (!buckets) return 0
   return (
+    Number(buckets['1-30']) +
     Number(buckets['31-60']) +
     Number(buckets['61-90']) +
     Number(buckets['90+'])
@@ -130,8 +151,8 @@ function sumAgeingOverdue(buckets: AgeingBuckets) {
 
 export function getOverdueTotals(snapshot: OwnerSnapshot) {
   return {
-    receivables: sumAgeingOverdue(snapshot.ageing.receivables),
-    payables: sumAgeingOverdue(snapshot.ageing.payables),
+    receivables: sumAgeingOverdue(snapshot.ageing?.receivables),
+    payables: sumAgeingOverdue(snapshot.ageing?.payables),
   }
 }
 

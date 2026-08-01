@@ -287,7 +287,7 @@ export function SalesDocumentsPanel() {
                 {lines.map((line, index) => (
                   <div
                     key={line.key}
-                    className="flex flex-col gap-3 rounded-xl border border-border p-3"
+                    className="flex flex-col gap-3 rounded-lg bg-muted/40 p-3"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-sm font-medium">

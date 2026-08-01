@@ -5,7 +5,11 @@ import { DownloadIcon, FileBarChartIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Badge } from '#/components/ui/badge.tsx'
-import { gstReconciliationBadgeIntent } from '#/lib/badge-intent.ts'
+import {
+  ageingBucketBadgeIntent,
+  gstReconciliationBadgeIntent,
+} from '#/lib/badge-intent.ts'
+import { AGEING_BUCKET_DISPLAY_LABEL } from '#/features/accounting/ageing-service.ts'
 import { Button } from '#/components/ui/button.tsx'
 import {
   Card,
@@ -399,19 +403,19 @@ export function ReportsPanel() {
               {gstr1ReconReport ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">Matched</p>
                       <p className="text-lg font-semibold">
                         {gstr1ReconReport.summary.matchedCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">Mismatched</p>
                       <p className="text-lg font-semibold">
                         {gstr1ReconReport.summary.mismatchedCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">
                         Missing in books
                       </p>
@@ -419,7 +423,7 @@ export function ReportsPanel() {
                         {gstr1ReconReport.summary.missingInBooksCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">
                         Missing in GSTR-1
                       </p>
@@ -737,7 +741,7 @@ export function ReportsPanel() {
                     <TableRow>
                       <TableHead>Party</TableHead>
                       <TableHead>Invoice</TableHead>
-                      <TableHead>Days</TableHead>
+                      <TableHead>Days past due</TableHead>
                       <TableHead>Bucket</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
                     </TableRow>
@@ -757,9 +761,11 @@ export function ReportsPanel() {
                         <TableRow key={row.documentNumber}>
                           <TableCell>{row.partyName}</TableCell>
                           <TableCell>{row.documentNumber}</TableCell>
-                          <TableCell>{row.daysOutstanding}</TableCell>
+                          <TableCell>{row.daysPastDue}</TableCell>
                           <TableCell>
-                            <Badge variant="neutral">{row.bucket}</Badge>
+                            <Badge variant={ageingBucketBadgeIntent(row.bucket)}>
+                              {AGEING_BUCKET_DISPLAY_LABEL[row.bucket]}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             {formatInr(row.outstandingAmount)}
@@ -782,7 +788,7 @@ export function ReportsPanel() {
                     <TableRow>
                       <TableHead>Party</TableHead>
                       <TableHead>Bill</TableHead>
-                      <TableHead>Days</TableHead>
+                      <TableHead>Days past due</TableHead>
                       <TableHead>Bucket</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
                     </TableRow>
@@ -802,9 +808,11 @@ export function ReportsPanel() {
                         <TableRow key={row.documentNumber}>
                           <TableCell>{row.partyName}</TableCell>
                           <TableCell>{row.documentNumber}</TableCell>
-                          <TableCell>{row.daysOutstanding}</TableCell>
+                          <TableCell>{row.daysPastDue}</TableCell>
                           <TableCell>
-                            <Badge variant="neutral">{row.bucket}</Badge>
+                            <Badge variant={ageingBucketBadgeIntent(row.bucket)}>
+                              {AGEING_BUCKET_DISPLAY_LABEL[row.bucket]}
+                            </Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             {formatInr(row.outstandingAmount)}
@@ -1136,19 +1144,19 @@ export function ReportsPanel() {
               {gstr2bReport ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">Matched</p>
                       <p className="text-lg font-semibold">
                         {gstr2bReport.summary.matchedCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">Mismatched</p>
                       <p className="text-lg font-semibold">
                         {gstr2bReport.summary.mismatchedCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">
                         Missing in books
                       </p>
@@ -1156,7 +1164,7 @@ export function ReportsPanel() {
                         {gstr2bReport.summary.missingInBooksCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">
                         Missing in 2B
                       </p>
@@ -1164,19 +1172,19 @@ export function ReportsPanel() {
                         {gstr2bReport.summary.missingIn2bCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">Conflicts</p>
                       <p className="text-lg font-semibold">
                         {gstr2bReport.summary.conflictCount}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">2B ITC</p>
                       <p className="text-lg font-semibold">
                         {formatInr(gstr2bReport.summary.portalItcTotal)}
                       </p>
                     </div>
-                    <div className="rounded-lg border p-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs text-muted-foreground">
                         Claimable ITC
                       </p>
@@ -1314,7 +1322,7 @@ export function ReportsPanel() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border p-4">
+                <div className="rounded-lg bg-muted/40 p-4">
                   <p className="text-xs text-muted-foreground">
                     Sales invoices
                   </p>
@@ -1322,7 +1330,7 @@ export function ReportsPanel() {
                     {exportQuery.data?.salesInvoices.length ?? 0}
                   </p>
                 </div>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-lg bg-muted/40 p-4">
                   <p className="text-xs text-muted-foreground">
                     Purchase bills
                   </p>
@@ -1330,7 +1338,7 @@ export function ReportsPanel() {
                     {exportQuery.data?.purchaseBills.length ?? 0}
                   </p>
                 </div>
-                <div className="rounded-lg border p-4">
+                <div className="rounded-lg bg-muted/40 p-4">
                   <p className="text-xs text-muted-foreground">
                     Trial balance rows
                   </p>

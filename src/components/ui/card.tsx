@@ -6,13 +6,14 @@ function Card({
   className,
   size = 'default',
   ...props
-}: React.ComponentProps<'div'> & { size?: 'default' | 'sm' }) {
+}: React.ComponentProps<'div'> & { size?: 'default' | 'sm' | 'hero' }) {
   return (
     <div
-      data-slot="card"
+      data-hero-surface={size === 'hero' ? '' : undefined}
       data-size={size}
+      data-slot="card"
       className={cn(
-        'group/card flex min-w-0 flex-col gap-(--card-spacing) overflow-hidden rounded-lg bg-card py-(--card-spacing) text-xs/relaxed text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg',
+        'group/card flex min-w-0 flex-col gap-(--card-spacing) overflow-hidden rounded-lg bg-card py-(--card-spacing) text-xs/relaxed text-card-foreground shadow-(--elevation-1) transition-shadow duration-(--duration-base) ease-(--ease-precise) [--card-spacing:--spacing(4)] has-[>img:first-child]:pt-0 data-[size=hero]:rounded-[var(--radius-hero)] data-[size=hero]:shadow-(--elevation-2) data-[size=hero]:[--card-spacing:--spacing(5)] data-[size=sm]:[--card-spacing:--spacing(3)] *:[img:first-child]:rounded-t-lg *:[img:last-child]:rounded-b-lg',
         className,
       )}
       {...props}

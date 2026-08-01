@@ -4,6 +4,7 @@ import {
   buildPayablesAgeing,
   buildReceivablesAgeing,
 } from '#/features/accounting/ageing-service.ts'
+import { buildAttentionQueue } from '#/features/dashboard/attention-queue.ts'
 import {
   getDashboardSummary,
   listDashboardSummariesBetween,
@@ -11,11 +12,22 @@ import {
 import { buildGstr3bReport } from '#/features/gst/gstr3b-report-service.ts'
 import { buildGstDocuments } from '#/features/gst/gst-report-documents.ts'
 
-import type { AgeingBucketLabel } from '#/features/accounting/ageing-service.ts'
+import type {
+  AgeingBucketLabel,
+  AgeingRow,
+} from '#/features/accounting/ageing-service.ts'
 import type { LedgerAccountRepository } from '#/features/accounting/chart-of-accounts.ts'
 import type { LedgerPostingRepository } from '#/features/accounting/posting-engine.ts'
+import type { Capability } from '#/features/companies/membership-service.ts'
+import type {
+  AttentionItem,
+  LowStockSignal,
+  OverduePartySignal,
+} from '#/features/dashboard/attention-queue.ts'
 import type { DashboardSummaryRepository } from '#/features/dashboard/dashboard-summary-service.ts'
 import type { ExpenseRepository } from '#/features/expenses/expense-service.ts'
+import type { ItemRepository } from '#/features/inventory/item-service.ts'
+import type { StockBalanceRepository } from '#/features/inventory/stock-movement-service.ts'
 import type { PartyRepository } from '#/features/parties/party-service.ts'
 import type { PurchaseBillRepository } from '#/features/purchases/purchase-bill-service.ts'
 import type { SalesInvoiceRepository } from '#/features/sales/sales-invoice-service.ts'
@@ -57,7 +69,8 @@ export type OwnerDashboardSnapshot = {
     receivables: Array<DueTodayItem>
     payables: Array<DueTodayItem>
   }
-  ageing: {
+  /** Report-grade detail; omitted for callers without the `view_reports` capability. */
+  ageing?: {
     receivables: Record<AgeingBucketLabel, string>
     payables: Record<AgeingBucketLabel, string>
   }
@@ -84,7 +97,8 @@ export type OwnerDashboardSnapshot = {
       expensesPercent: string
     }
   }
-  gstMtd: {
+  /** Report-grade detail; omitted for callers without the `view_reports` capability. */
+  gstMtd?: {
     periodStart: string
     periodEnd: string
     outwardTaxableValue: string
@@ -92,6 +106,23 @@ export type OwnerDashboardSnapshot = {
     inputGst: string
     netGstPayable: string
   }
+  /** Ranked "needs attention" rows, already filtered to what this caller may see. */
+  attention: Array<AttentionItem>
+}
+
+export type OwnerDashboardOptions = {
+  /**
+   * When true, the caller receives financial figures (cash, sales, ageing, GST,
+   * overdue counts). Defaults to false so a forgotten option cannot leak
+   * report-grade data to `view`-only roles such as billing or inventory.
+   */
+  includeReports?: boolean
+  /**
+   * The caller's capabilities, used to filter the attention queue. Defaults to
+   * none, so a caller that forgets to pass them gets an empty queue rather than
+   * rows they may not be entitled to see.
+   */
+  capabilities?: ReadonlyArray<Capability>
 }
 
 export type OwnerDashboardDeps = {
@@ -102,6 +133,8 @@ export type OwnerDashboardDeps = {
   expenses: ExpenseRepository
   postings: LedgerPostingRepository
   ledgers: LedgerAccountRepository
+  items: ItemRepository
+  stockBalances: StockBalanceRepository
 }
 
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP })
@@ -297,12 +330,178 @@ function sumOutstanding(rows: Array<{ outstandingAmount: string }>) {
     .toFixed(2)
 }
 
+/**
+ * Collapses ageing rows into one overdue position per party. Rows that are not
+ * yet past due are dropped entirely, so a party whose documents are all within
+ * terms produces no signal.
+ */
+export function rollUpOverdueParties(
+  rows: ReadonlyArray<AgeingRow>,
+): Array<OverduePartySignal> {
+  const byParty = new Map<
+    string,
+    { signal: OverduePartySignal; outstanding: Decimal }
+  >()
+
+  for (const row of rows) {
+    if (row.daysPastDue <= 0) continue
+
+    const existing = byParty.get(row.partyId)
+    if (!existing) {
+      byParty.set(row.partyId, {
+        signal: {
+          partyId: row.partyId,
+          partyName: row.partyName,
+          documentCount: 1,
+          outstandingAmount: new Decimal(row.outstandingAmount).toFixed(2),
+          maxDaysPastDue: row.daysPastDue,
+        },
+        outstanding: new Decimal(row.outstandingAmount),
+      })
+      continue
+    }
+
+    existing.outstanding = existing.outstanding.plus(row.outstandingAmount)
+    existing.signal.documentCount += 1
+    existing.signal.outstandingAmount = existing.outstanding.toFixed(2)
+    existing.signal.maxDaysPastDue = Math.max(
+      existing.signal.maxDaysPastDue,
+      row.daysPastDue,
+    )
+  }
+
+  return [...byParty.values()].map((entry) => entry.signal)
+}
+
+/** `''`, `null` and unparseable values all mean "no quantity". */
+function toQuantity(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  if (!trimmed || !Number.isFinite(Number(trimmed))) return new Decimal(0)
+  return new Decimal(trimmed)
+}
+
+/**
+ * Items at or below their reorder level, read from the stock-movement-derived
+ * balance table. An item with no reorder level carries no threshold and so no
+ * signal; emitting one would flood the queue with every item in the catalogue.
+ */
+export async function buildLowStockSignals(
+  deps: Pick<OwnerDashboardDeps, 'items' | 'stockBalances'>,
+  companyId: string,
+): Promise<Array<LowStockSignal>> {
+  const [items, balances] = await Promise.all([
+    deps.items.listByCompanyId(companyId),
+    deps.stockBalances.listBalancesByCompany(companyId),
+  ])
+
+  const quantityByItem = new Map<string, Decimal>()
+  for (const balance of balances) {
+    quantityByItem.set(
+      balance.itemId,
+      (quantityByItem.get(balance.itemId) ?? new Decimal(0)).plus(
+        toQuantity(balance.quantity),
+      ),
+    )
+  }
+
+  return items.flatMap((item) => {
+    if (!item.tracksInventory) return []
+
+    const reorderLevel = toQuantity(item.reorderLevel)
+    if (reorderLevel.lte(0)) return []
+
+    const availableQuantity = quantityByItem.get(item.id) ?? new Decimal(0)
+    if (availableQuantity.gt(reorderLevel)) return []
+
+    return [
+      {
+        itemId: item.id,
+        itemName: item.name,
+        availableQuantity: availableQuantity.toNumber(),
+        reorderLevel: reorderLevel.toNumber(),
+      },
+    ]
+  })
+}
+
+function emptyFinancialSnapshot(
+  asOfDate: string,
+  attention: Array<AttentionItem>,
+): OwnerDashboardSnapshot {
+  const trendRange = dateRangeEndingOn(asOfDate, 7)
+  const currentMonthStart = monthStart(asOfDate)
+  const previousPeriod = previousMonthComparablePeriod(asOfDate)
+  const zeroTotals = {
+    salesTotal: '0.00',
+    purchaseTotal: '0.00',
+    expensesTotal: '0.00',
+  }
+
+  return {
+    asOfDate,
+    today: {
+      salesTotal: '0.00',
+      purchaseTotal: '0.00',
+      moneyIn: '0.00',
+      moneyOut: '0.00',
+      expensesTotal: '0.00',
+      netCashFlow: '0.00',
+    },
+    balances: {
+      cashBankBalance: '0.00',
+      receivableTotal: '0.00',
+      payableTotal: '0.00',
+    },
+    trend: trendRange.dates.map((date) => ({
+      date,
+      sales: '0.00',
+      purchases: '0.00',
+    })),
+    todayExpenses: [],
+    dueToday: { receivables: [], payables: [] },
+    overdue: { invoiceCount: 0, billCount: 0 },
+    monthCompare: {
+      currentLabel: formatCompareLabel(currentMonthStart, asOfDate),
+      previousLabel: formatCompareLabel(
+        previousPeriod.start,
+        previousPeriod.end,
+      ),
+      current: zeroTotals,
+      previous: zeroTotals,
+      change: {
+        salesPercent: '0.00',
+        purchasePercent: '0.00',
+        expensesPercent: '0.00',
+      },
+    },
+    attention,
+  }
+}
+
 export async function getOwnerDashboardSnapshot(
   deps: OwnerDashboardDeps,
   companyId: string,
   asOfDate: string,
   companyStateCode: string,
+  options: OwnerDashboardOptions = {},
 ): Promise<OwnerDashboardSnapshot> {
+  const includeReports = options.includeReports ?? false
+  const capabilities = options.capabilities ?? []
+
+  // Operational callers (billing / inventory) keep the attention queue — low
+  // stock and similar — but never receive company financials.
+  if (!includeReports) {
+    const lowStock = await buildLowStockSignals(deps, companyId)
+    return emptyFinancialSnapshot(
+      asOfDate,
+      buildAttentionQueue({
+        asOf: asOfDate,
+        capabilities,
+        lowStock,
+      }),
+    )
+  }
+
   const trendRange = dateRangeEndingOn(asOfDate, 7)
   const currentMonthStart = monthStart(asOfDate)
   const previousPeriod = previousMonthComparablePeriod(asOfDate)
@@ -320,6 +519,7 @@ export async function getOwnerDashboardSnapshot(
     receivablesAgeing,
     payablesAgeing,
     gstDocuments,
+    lowStock,
   ] = await Promise.all([
     getDashboardSummary(deps.summaries, companyId, asOfDate),
     listDashboardSummariesBetween(
@@ -357,6 +557,7 @@ export async function getOwnerDashboardSnapshot(
       bills: deps.bills,
       parties: deps.parties,
     }),
+    buildLowStockSignals(deps, companyId),
   ])
 
   const partyNameById = new Map(parties.map((party) => [party.id, party.name]))
@@ -426,11 +627,29 @@ export async function getOwnerDashboardSnapshot(
     previousPeriod.start,
     previousPeriod.end,
   )
+  const currentLabel = formatCompareLabel(currentMonthStart, asOfDate)
   const gstMtd = buildGstr3bReport({
     companyId,
     periodStart: currentMonthStart,
     periodEnd: asOfDate,
     documents: gstDocuments,
+  })
+
+  /**
+   * `filingDueDate` is deliberately omitted: the company carries no
+   * filing-frequency field yet, so there is no honest way to derive one, and
+   * the ranking module keeps GST at its floor without it.
+   */
+  const attention = buildAttentionQueue({
+    asOf: asOfDate,
+    capabilities,
+    lowStock,
+    overdueReceivables: rollUpOverdueParties(receivablesAgeing.rows),
+    overduePayables: rollUpOverdueParties(payablesAgeing.rows),
+    gst: {
+      netPayableAmount: gstMtd.netGstPayable,
+      periodLabel: currentLabel,
+    },
   })
 
   return {
@@ -466,13 +685,12 @@ export async function getOwnerDashboardSnapshot(
       payables: payablesAgeing.bucketTotals,
     },
     overdue: {
-      invoiceCount: receivablesAgeing.rows.filter((row) => row.bucket !== '0-30')
+      invoiceCount: receivablesAgeing.rows.filter((row) => row.daysPastDue > 0)
         .length,
-      billCount: payablesAgeing.rows.filter((row) => row.bucket !== '0-30')
-        .length,
+      billCount: payablesAgeing.rows.filter((row) => row.daysPastDue > 0).length,
     },
     monthCompare: {
-      currentLabel: formatCompareLabel(currentMonthStart, asOfDate),
+      currentLabel,
       previousLabel: formatCompareLabel(
         previousPeriod.start,
         previousPeriod.end,
@@ -510,5 +728,6 @@ export async function getOwnerDashboardSnapshot(
       inputGst: gstMtd.inputGst,
       netGstPayable: gstMtd.netGstPayable,
     },
+    attention,
   }
 }

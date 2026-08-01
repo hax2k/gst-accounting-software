@@ -73,7 +73,7 @@ export function BusinessSnapshotHero({
     },
     {
       label: 'GST output',
-      value: formatInr(snapshot.gstMtd.outputGst),
+      value: formatInr(snapshot.gstMtd?.outputGst ?? '0.00'),
       helper: 'Tax collected',
       accent: themeColors.iconAccentReports,
       backgroundColor: themeColors.warningMuted,
@@ -81,7 +81,7 @@ export function BusinessSnapshotHero({
     },
     {
       label: 'GST input',
-      value: formatInr(snapshot.gstMtd.inputGst),
+      value: formatInr(snapshot.gstMtd?.inputGst ?? '0.00'),
       helper: 'Input credit',
       accent: themeColors.iconAccentStock,
       backgroundColor: '#eef2ff',

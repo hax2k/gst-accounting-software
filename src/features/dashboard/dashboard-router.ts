@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+import {
+  listRoleCapabilities,
+  roleHasCapability,
+} from '#/features/companies/membership-service.ts'
 import { getOwnerDashboardSnapshot } from '#/features/dashboard/dashboard-owner-service.ts'
 import { getDashboardSummary } from '#/features/dashboard/dashboard-summary-service.ts'
 import { capabilityProcedure } from '#/integrations/trpc/company-procedures.ts'
@@ -33,9 +37,9 @@ export const createDashboardRouter = (
           input.summaryDate,
         )
       }),
-    getOwnerSnapshot: capabilityProcedure('view_reports')
+    getOwnerSnapshot: capabilityProcedure('view')
       .input(getOwnerSnapshotInputSchema)
-      .query(({ input }) => {
+      .query(({ ctx, input }) => {
         if (!ownerDeps) {
           throw new Error('Owner dashboard dependencies are not configured')
         }
@@ -48,6 +52,13 @@ export const createDashboardRouter = (
           input.companyId,
           asOfDate,
           input.companyStateCode,
+          {
+            includeReports: roleHasCapability(
+              ctx.membership.role,
+              'view_reports',
+            ),
+            capabilities: listRoleCapabilities(ctx.membership.role),
+          },
         )
       }),
   }) satisfies TRPCRouterRecord

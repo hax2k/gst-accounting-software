@@ -2,23 +2,34 @@ import type { LucideIcon } from 'lucide-react'
 import {
   BanknoteIcon,
   BookOpenIcon,
+  BoxesIcon,
+  BriefcaseBusinessIcon,
   Building2Icon,
   ClipboardListIcon,
+  ContactIcon,
+  CreditCardIcon,
+  DatabaseIcon,
   FileBarChartIcon,
+  FileSignatureIcon,
   FileTextIcon,
   LandmarkIcon,
+  LayersIcon,
   LayoutDashboardIcon,
+  ListTreeIcon,
   PackageCheckIcon,
   PackageIcon,
   ReceiptIcon,
+  ReceiptIndianRupeeIcon,
   ScanTextIcon,
   Settings2Icon,
   ShoppingCartIcon,
-  TruckIcon,
+  TrendingUpIcon,
   Undo2Icon,
   UploadIcon,
   UsersIcon,
+  WalletIcon,
   WarehouseIcon,
+  WrenchIcon,
 } from 'lucide-react'
 
 import type { Capability } from '#/features/companies/membership-service.ts'
@@ -73,13 +84,13 @@ export const appNav: Array<AppNavSection> = [
   {
     kind: 'group',
     label: 'Sales',
-    icon: ShoppingCartIcon,
+    icon: TrendingUpIcon,
     items: [
       { label: 'Invoices', path: '/app/sales', icon: FileTextIcon },
       {
         label: 'Quotations & orders',
         path: '/app/sales/documents',
-        icon: ClipboardListIcon,
+        icon: FileSignatureIcon,
       },
       { label: 'Returns', path: '/app/returns', icon: Undo2Icon },
     ],
@@ -87,7 +98,7 @@ export const appNav: Array<AppNavSection> = [
   {
     kind: 'group',
     label: 'Purchase',
-    icon: TruckIcon,
+    icon: ShoppingCartIcon,
     items: [
       { label: 'Bills', path: '/app/purchases', icon: ReceiptIcon },
       { label: 'OCR review', path: '/app/ocr', icon: ScanTextIcon },
@@ -106,7 +117,7 @@ export const appNav: Array<AppNavSection> = [
   {
     kind: 'group',
     label: 'Payments & banking',
-    icon: BanknoteIcon,
+    icon: WalletIcon,
     items: [
       { label: 'Payments', path: '/app/payments', icon: BanknoteIcon },
       {
@@ -115,17 +126,17 @@ export const appNav: Array<AppNavSection> = [
         icon: LandmarkIcon,
         requiredCapability: 'reconcile_bank',
       },
-      { label: 'Expenses', path: '/app/expenses', icon: ReceiptIcon },
+      { label: 'Expenses', path: '/app/expenses', icon: CreditCardIcon },
     ],
   },
   {
     kind: 'group',
     label: 'Inventory',
-    icon: WarehouseIcon,
+    icon: BoxesIcon,
     items: [
       { label: 'Items', path: '/app/masters/items', icon: PackageIcon },
       { label: 'Godowns', path: '/app/masters/godowns', icon: WarehouseIcon },
-      { label: 'Stock', path: '/app/inventory', icon: WarehouseIcon },
+      { label: 'Stock', path: '/app/inventory', icon: LayersIcon },
     ],
   },
   {
@@ -136,14 +147,14 @@ export const appNav: Array<AppNavSection> = [
       {
         label: 'Customers & suppliers',
         path: '/app/masters/parties',
-        icon: UsersIcon,
+        icon: ContactIcon,
       },
     ],
   },
   {
     kind: 'group',
     label: 'GST & reports',
-    icon: FileBarChartIcon,
+    icon: ReceiptIndianRupeeIcon,
     items: [
       { label: 'Reports', path: '/app/reports', icon: FileBarChartIcon },
       { label: 'Journal', path: '/app/accounting/journal', icon: BookOpenIcon },
@@ -152,12 +163,12 @@ export const appNav: Array<AppNavSection> = [
   {
     kind: 'group',
     label: 'Masters',
-    icon: BookOpenIcon,
+    icon: DatabaseIcon,
     items: [
       {
         label: 'Chart of accounts',
         path: '/app/masters/chart-of-accounts',
-        icon: BookOpenIcon,
+        icon: ListTreeIcon,
       },
       {
         label: 'Company profile',
@@ -167,14 +178,14 @@ export const appNav: Array<AppNavSection> = [
       {
         label: 'Companies',
         path: '/app/masters/companies',
-        icon: Building2Icon,
+        icon: BriefcaseBusinessIcon,
       },
     ],
   },
   {
     kind: 'group',
     label: 'Utilities',
-    icon: UploadIcon,
+    icon: WrenchIcon,
     items: [{ label: 'Import data', path: '/app/imports', icon: UploadIcon }],
   },
   {

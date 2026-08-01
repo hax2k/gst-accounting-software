@@ -141,7 +141,7 @@ export function ChartOfAccountsPanel() {
       ) : !hasAccounts ? (
         <Card className="flex flex-1 items-center justify-center">
           <CardContent className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="grid size-12 place-items-center rounded-xl bg-muted text-muted-foreground">
+            <div className="grid size-12 place-items-center rounded-lg bg-muted text-muted-foreground">
               <WalletCardsIcon />
             </div>
             <div className="flex flex-col gap-1">

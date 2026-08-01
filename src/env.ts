@@ -15,6 +15,7 @@ export const env = createEnv({
   client: {
     VITE_APP_TITLE: z.string().min(1).optional(),
     VITE_REQUIRE_AUTH: z.enum(['true', 'false']).optional(),
+    VITE_ENABLE_GOOGLE_AUTH: z.enum(['true', 'false']).optional(),
   },
 
   /**

@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { VoucherEntryPage } from '#/features/accounting/components/voucher-entry-page.tsx'
 
 const searchSchema = z.object({
-  fromDocument: z.string().uuid().optional(),
+  fromDocument: z.string().uuid().optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/app/sales/new')({

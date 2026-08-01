@@ -136,6 +136,8 @@ export const trpcRouter = createTRPCRouter({
     expenses: expenseRepository,
     postings: ledgerPostingRepository,
     ledgers: ledgerAccountRepository,
+    items: itemRepository,
+    stockBalances: stockStore,
   }),
   documents: createDocumentsRouter(
     documentSequenceRepository,

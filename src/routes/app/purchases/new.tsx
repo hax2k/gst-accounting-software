@@ -5,7 +5,7 @@ import { VoucherEntryPage } from '#/features/accounting/components/voucher-entry
 import { consumeGstr2bPurchasePrefill } from '#/features/gst/gstr2b-purchase-prefill.ts'
 
 const searchSchema = z.object({
-  fromGrn: z.string().uuid().optional(),
+  fromGrn: z.string().uuid().optional().catch(undefined),
   supplierBillNumber: z.string().optional(),
   billDate: z.string().optional(),
   taxableAmount: z.string().optional(),

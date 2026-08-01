@@ -155,7 +155,7 @@ export function VoucherPreviewSheet({
       >
         <SheetHeader className="shrink-0 border-b px-6 py-4">
           <div className="flex items-start gap-3 pr-8">
-            <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+            <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-success" />
             <div className="flex flex-col gap-1">
               <SheetTitle className="text-base">
                 {target?.kind === 'sales' ? 'Invoice saved' : 'Bill saved'}

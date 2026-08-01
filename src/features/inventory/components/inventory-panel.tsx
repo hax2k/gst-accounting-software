@@ -22,12 +22,20 @@ import {
 } from '#/components/ui/table.tsx'
 import { ScrollableTabsList } from '#/components/ui/scrollable-tabs-list.tsx'
 import { Tabs, TabsTrigger } from '#/components/ui/tabs.tsx'
+import { ActiveFilterChip } from '#/features/app-shell/components/active-filter-chip.tsx'
 import { WorkspacePage } from '#/features/app-shell/components/workspace-page.tsx'
 import { useWorkspace } from '#/features/app-shell/workspace-context.tsx'
+import { resolveListFilter } from '#/features/app-shell/list-filter.ts'
 import { formatInr } from '#/features/app-shell/data/voucher-demo-masters.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
 
-export function InventoryPanel() {
+export function InventoryPanel({
+  itemId,
+  onClearItemFilter,
+}: {
+  itemId?: string
+  onClearItemFilter?: () => void
+}) {
   const trpc = useTRPC()
   const { companyId, isReady } = useWorkspace()
   const [query, setQuery] = React.useState('')
@@ -43,7 +51,13 @@ export function InventoryPanel() {
   })
 
   const rows = stockQuery.data ?? []
+  const itemFilter = resolveListFilter(
+    itemId,
+    rows.map((row) => ({ id: row.itemId, label: row.itemName })),
+    stockQuery.isSuccess,
+  )
   const filtered = rows.filter((row) => {
+    if (itemFilter.id && row.itemId !== itemFilter.id) return false
     const isLow = Number(row.quantity) < 1
     const matchesStatus =
       statusFilter === 'all' || (statusFilter === 'low' ? isLow : !isLow)
@@ -99,18 +113,26 @@ export function InventoryPanel() {
             </CardDescription>
           </div>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <Tabs
-              onValueChange={(value) =>
-                setStatusFilter(value as 'all' | 'healthy' | 'low')
-              }
-              value={statusFilter}
-            >
-              <ScrollableTabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="healthy">In stock</TabsTrigger>
-                <TabsTrigger value="low">Low / zero</TabsTrigger>
-              </ScrollableTabsList>
-            </Tabs>
+            <div className="flex flex-wrap items-center gap-2">
+              <Tabs
+                onValueChange={(value) =>
+                  setStatusFilter(value as 'all' | 'healthy' | 'low')
+                }
+                value={statusFilter}
+              >
+                <ScrollableTabsList>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="healthy">In stock</TabsTrigger>
+                  <TabsTrigger value="low">Low / zero</TabsTrigger>
+                </ScrollableTabsList>
+              </Tabs>
+              {itemFilter.id && onClearItemFilter ? (
+                <ActiveFilterChip
+                  label={itemFilter.label ?? 'Selected item'}
+                  onClear={onClearItemFilter}
+                />
+              ) : null}
+            </div>
             <SearchInput
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search item"

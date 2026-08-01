@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 
 import { CardRow } from '@/components/data/card-row'
+import { AGEING_BUCKET_DISPLAY_LABEL } from '@/lib/dashboard-metrics'
+import type { AgeingBucketLabel } from '@/lib/dashboard-metrics'
 import { EmptyState } from '@/components/data/empty-state'
 import { LoadingState } from '@/components/data/loading-state'
 import { SectionHeader } from '@/components/layout/section-header'
@@ -228,7 +230,7 @@ export function ReportsScreen({ variant = 'stack' }: { variant?: ScreenVariant }
             {Object.entries(ageing.bucketTotals).map(([bucket, total]) => (
               <CardRow
                 key={bucket}
-                title={`${bucket} days`}
+                title={AGEING_BUCKET_DISPLAY_LABEL[bucket as AgeingBucketLabel]}
                 amount={formatInr(total)}
                 badge="Ageing"
               />
@@ -237,7 +239,7 @@ export function ReportsScreen({ variant = 'stack' }: { variant?: ScreenVariant }
               <CardRow
                 key={`${row.documentNumber}-${row.partyId}`}
                 title={row.partyName}
-                subtitle={`${row.documentNumber} · ${row.daysOutstanding}d`}
+                subtitle={`${row.documentNumber} · ${row.daysPastDue}d past due`}
                 amount={formatInr(row.outstandingAmount)}
               />
             ))}

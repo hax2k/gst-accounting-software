@@ -14,11 +14,11 @@ const memberships = membershipRepository
  */
 export function capabilityProcedure(capability: Capability) {
   return companyProcedure.use(async ({ ctx, next }) => {
-    await assertCapability(memberships, {
+    const membership = await assertCapability(memberships, {
       companyId: ctx.companyId,
       userId: ctx.userId,
       capability,
     })
-    return next({ ctx })
+    return next({ ctx: { ...ctx, membership } })
   })
 }
