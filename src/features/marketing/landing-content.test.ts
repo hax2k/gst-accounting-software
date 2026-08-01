@@ -31,6 +31,11 @@ describe('landing content', () => {
     expect(jsonLd.name).toBe(SITE.name)
     expect(jsonLd.offers.price).toBe('0')
     expect(jsonLd.offers.priceCurrency).toBe('INR')
+    expect(jsonLd.image).toBe(SITE.ogImage)
+  })
+
+  test('OG card URL is absolute and points at the public asset', () => {
+    expect(SITE.ogImage).toBe('https://hisaabkro.in/og-card.png')
   })
 
   test('primary CTA targets signup', () => {
@@ -61,6 +66,7 @@ describe('landing content', () => {
       'components/landing-cta.tsx',
       'components/landing-footer.tsx',
       'components/product-preview.tsx',
+      'components/alternative-page.tsx',
     ]
 
     for (const file of files) {

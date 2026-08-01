@@ -6,8 +6,19 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card.tsx'
+import { SITE } from '#/features/marketing/landing-content.ts'
 
 export const Route = createFileRoute('/data-deletion')({
+  head: () => ({
+    meta: [
+      { title: `Data Deletion — ${SITE.name}` },
+      {
+        name: 'description',
+        content: `How to request deletion of your ${SITE.name} account and business data.`,
+      },
+    ],
+    links: [{ rel: 'canonical', href: `${SITE.url}/data-deletion` }],
+  }),
   component: DataDeletionRoute,
 })
 

@@ -6,10 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card.tsx'
+import { SITE } from '#/features/marketing/landing-content.ts'
 
 const updatedAt = 'July 18, 2026'
 
 export const Route = createFileRoute('/privacy')({
+  head: () => ({
+    meta: [
+      { title: `Privacy Policy — ${SITE.name}` },
+      {
+        name: 'description',
+        content: `How ${SITE.name} collects, uses, and retains your account and business data.`,
+      },
+    ],
+    links: [{ rel: 'canonical', href: `${SITE.url}/privacy` }],
+  }),
   component: PrivacyRoute,
 })
 
@@ -60,7 +71,8 @@ function PrivacyRoute() {
               HisaabKro does not sell user data. Data may be processed by
               service providers used for hosting, database, authentication,
               email delivery, storage, analytics, or OCR where required to run
-              the service.
+              the service. We use Google Analytics to understand aggregate
+              website traffic and usage.
             </p>
           </CardContent>
         </Card>

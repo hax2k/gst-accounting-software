@@ -7,18 +7,28 @@ import {
 } from '#/components/ui/collapsible.tsx'
 import { FAQ } from '#/features/marketing/landing-content.ts'
 
-export function LandingFaq() {
+interface LandingFaqProps {
+  id?: string
+  title?: string
+  items?: ReadonlyArray<{ question: string; answer: string }>
+}
+
+export function LandingFaq({
+  id = FAQ.id,
+  title = FAQ.title,
+  items = FAQ.items,
+}: LandingFaqProps = {}) {
   return (
     <section
       className="mx-auto max-w-3xl px-4 py-16 md:py-20"
       data-ui="chrome"
-      id={FAQ.id}
+      id={id}
     >
       <h2 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">
-        {FAQ.title}
+        {title}
       </h2>
       <div className="mt-8 flex flex-col gap-2">
-        {FAQ.items.map((item) => (
+        {items.map((item) => (
           <Collapsible
             key={item.question}
             className="rounded-lg bg-card shadow-(--elevation-1)"

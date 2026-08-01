@@ -16,6 +16,8 @@ export const env = createEnv({
     VITE_APP_TITLE: z.string().min(1).optional(),
     VITE_REQUIRE_AUTH: z.enum(['true', 'false']).optional(),
     VITE_ENABLE_GOOGLE_AUTH: z.enum(['true', 'false']).optional(),
+    VITE_GA_MEASUREMENT_ID: z.string().min(1).optional(),
+    VITE_GOOGLE_SITE_VERIFICATION: z.string().min(1).optional(),
   },
 
   /**

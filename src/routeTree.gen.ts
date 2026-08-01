@@ -34,6 +34,7 @@ import { Route as AppImportsRouteImport } from './routes/app/imports'
 import { Route as AppExpensesRouteImport } from './routes/app/expenses'
 import { Route as AppDashboardRouteImport } from './routes/app/dashboard'
 import { Route as AppBankReconciliationRouteImport } from './routes/app/bank-reconciliation'
+import { Route as AlternativesCompetitorRouteImport } from './routes/alternatives/$competitor'
 import { Route as AppSalesIndexRouteImport } from './routes/app/sales/index'
 import { Route as AppPurchasesIndexRouteImport } from './routes/app/purchases/index'
 import { Route as DesignAccountingSidebarRouteImport } from './routes/design/accounting/sidebar'
@@ -177,6 +178,11 @@ const AppBankReconciliationRoute = AppBankReconciliationRouteImport.update({
   path: '/bank-reconciliation',
   getParentRoute: () => AppRoute,
 } as any)
+const AlternativesCompetitorRoute = AlternativesCompetitorRouteImport.update({
+  id: '/alternatives/$competitor',
+  path: '/alternatives/$competitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSalesIndexRoute = AppSalesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/alternatives/$competitor': typeof AlternativesCompetitorRoute
   '/app/bank-reconciliation': typeof AppBankReconciliationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/expenses': typeof AppExpensesRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/alternatives/$competitor': typeof AlternativesCompetitorRoute
   '/app/bank-reconciliation': typeof AppBankReconciliationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/expenses': typeof AppExpensesRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/alternatives/$competitor': typeof AlternativesCompetitorRoute
   '/app/bank-reconciliation': typeof AppBankReconciliationRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/expenses': typeof AppExpensesRoute
@@ -409,6 +418,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/alternatives/$competitor'
     | '/app/bank-reconciliation'
     | '/app/dashboard'
     | '/app/expenses'
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/alternatives/$competitor'
     | '/app/bank-reconciliation'
     | '/app/dashboard'
     | '/app/expenses'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/signup'
+    | '/alternatives/$competitor'
     | '/app/bank-reconciliation'
     | '/app/dashboard'
     | '/app/expenses'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  AlternativesCompetitorRoute: typeof AlternativesCompetitorRoute
   DesignAccountingRoute: typeof DesignAccountingRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiTrpcSplatRoute: typeof ApiTrpcSplatRoute
@@ -721,6 +734,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/bank-reconciliation'
       preLoaderRoute: typeof AppBankReconciliationRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/alternatives/$competitor': {
+      id: '/alternatives/$competitor'
+      path: '/alternatives/$competitor'
+      fullPath: '/alternatives/$competitor'
+      preLoaderRoute: typeof AlternativesCompetitorRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/app/sales/': {
       id: '/app/sales/'
@@ -950,6 +970,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  AlternativesCompetitorRoute: AlternativesCompetitorRoute,
   DesignAccountingRoute: DesignAccountingRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiTrpcSplatRoute: ApiTrpcSplatRoute,
