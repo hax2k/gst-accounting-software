@@ -8,7 +8,7 @@ Canonical map:
 
 | Path                             | Purpose                                                         |
 | -------------------------------- | --------------------------------------------------------------- |
-| `/`                              | Redirect → `/app/dashboard` (or `/login` when auth is enforced) |
+| `/`                              | Public marketing landing page (session CTA → dashboard)         |
 | `/login`                         | Email/password sign-in                                          |
 | `/signup`                        | Create account                                                  |
 | `/onboarding`                    | First company setup (legal name, GST, FY, business type)        |

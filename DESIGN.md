@@ -5,9 +5,7 @@ are allowed in the web app. Read it before making any UI change.
 
 The system is a disciplined hybrid: expressive on hero/summary surfaces,
 strictly restrained on dense data surfaces. The chrome is **neutral near-black
-on a warm paper canvas** (hue 95) — not teal and not indigo. Note that
-`AGENTS.md` and `.cursorrules` still describe a "teal / radix-lyra" chrome;
-those references are stale and this document wins.
+on a warm paper canvas** (hue 95), carrying no accent hue of its own.
 
 ## Brand palette
 
