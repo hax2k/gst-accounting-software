@@ -82,9 +82,7 @@ export function MasterLookup({
         type="button"
         variant={isGrid ? 'ghost' : 'outline'}
       >
-        <span
-          className={cn('truncate', !selected && 'text-muted-foreground')}
-        >
+        <span className={cn('truncate', !selected && 'text-muted-foreground')}>
           {selected?.label ?? placeholder}
         </span>
         <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
@@ -98,56 +96,54 @@ export function MasterLookup({
         open={open}
         title={title}
       >
-        <Command>
-          <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => (
+        <CommandInput placeholder={searchPlaceholder} />
+        <CommandList>
+          <CommandEmpty>{emptyText}</CommandEmpty>
+          <CommandGroup>
+            {options.map((option) => (
+              <CommandItem
+                data-checked={option.value === value || undefined}
+                key={option.value}
+                keywords={
+                  option.keywords
+                    ? option.keywords.split(/\s+/).filter(Boolean)
+                    : undefined
+                }
+                onSelect={() => {
+                  onValueChange(option.value)
+                  setOpen(false)
+                }}
+                value={`${option.label} ${option.keywords ?? ''}`}
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="truncate">{option.label}</span>
+                  {option.description ? (
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {option.description}
+                    </span>
+                  ) : null}
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          {createAction ? (
+            <>
+              <CommandSeparator />
+              <CommandGroup>
                 <CommandItem
-                  data-checked={option.value === value || undefined}
-                  key={option.value}
-                  keywords={
-                    option.keywords
-                      ? option.keywords.split(/\s+/).filter(Boolean)
-                      : undefined
-                  }
                   onSelect={() => {
-                    onValueChange(option.value)
                     setOpen(false)
+                    createAction.onSelect()
                   }}
-                  value={`${option.label} ${option.keywords ?? ''}`}
+                  value={`__create__ ${createAction.label}`}
                 >
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span className="truncate">{option.label}</span>
-                    {option.description ? (
-                      <span className="truncate text-[11px] text-muted-foreground">
-                        {option.description}
-                      </span>
-                    ) : null}
-                  </div>
+                  <PlusIcon className="text-muted-foreground" />
+                  <span>{createAction.label}</span>
                 </CommandItem>
-              ))}
-            </CommandGroup>
-            {createAction ? (
-              <>
-                <CommandSeparator />
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false)
-                      createAction.onSelect()
-                    }}
-                    value={`__create__ ${createAction.label}`}
-                  >
-                    <PlusIcon className="text-muted-foreground" />
-                    <span>{createAction.label}</span>
-                  </CommandItem>
-                </CommandGroup>
-              </>
-            ) : null}
-          </CommandList>
-        </Command>
+              </CommandGroup>
+            </>
+          ) : null}
+        </CommandList>
       </CommandDialog>
     </>
   )
