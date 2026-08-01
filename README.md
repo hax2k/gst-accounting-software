@@ -118,6 +118,9 @@ VITE_ENABLE_GOOGLE_AUTH=false bun run build
 buttons. If you deploy some other way (Cloudflare Workers Builds, or your own
 CI), set `VITE_ENABLE_GOOGLE_AUTH=false` as a build-time variable there too.
 
+`VITE_GA_MEASUREMENT_ID` and `VITE_GOOGLE_SITE_VERIFICATION` are build-time
+vars too — see [SEO, Google Analytics, and Search Console](#seo-google-analytics-and-search-console).
+
 ### 4. Set up the database
 
 **Fresh database:**
@@ -266,6 +269,47 @@ This project is **free and open source**. Anyone can:
 ## Search keywords
 
 GST accounting software India · GST billing software · free GST invoice software · Busy alternative · Zoho Books alternative · Tally GST alternative · Marg ERP alternative · Vyapar alternative · inventory accounting GST · GSTR-1 software · GSTR-2B reconciliation · HSN summary · tax invoice generator India · purchase bill software · sales invoice software · small business accounting India · open source accounting software · cloud GST software · billing software India
+
+---
+
+## SEO, Google Analytics, and Search Console
+
+The homepage (`/`) targets the primary keywords above. Four dedicated pages
+target competitor-alternative search intent without duplicating the
+homepage's keywords: `/alternatives/tally`, `/alternatives/busy`,
+`/alternatives/vyapar`, `/alternatives/zoho-books`. Both `/` and the
+alternative pages ship meta tags, Open Graph/Twitter tags, canonical URLs,
+and `SoftwareApplication`/`FAQPage`/`BreadcrumbList` JSON-LD. `public/robots.txt`
+and `public/sitemap.xml` list every public page.
+
+### Google Analytics 4
+
+Set `VITE_GA_MEASUREMENT_ID` to enable it — it is a **build-time** var like
+`VITE_ENABLE_GOOGLE_AUTH`, blank by default so local dev and fresh clones ship
+with zero analytics script:
+
+```bash
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX bun run build
+```
+
+The measurement ID comes from a GA4 property at
+[analytics.google.com](https://analytics.google.com) (Admin → Data Streams →
+Web). Page views are sent manually on every route change, since the app is a
+client-side router.
+
+### Google Search Console
+
+1. Add the property for `https://hisaabkro.in` at
+   [search.google.com/search-console](https://search.google.com/search-console).
+2. Choose the **HTML tag** verification method and copy the `content="..."`
+   value (not the whole tag).
+3. Set `VITE_GOOGLE_SITE_VERIFICATION` to that value and rebuild/deploy —
+   also a build-time var:
+
+   ```bash
+   VITE_GOOGLE_SITE_VERIFICATION=your-verification-value bun run build
+   ```
+4. Once verified, submit `https://hisaabkro.in/sitemap.xml` under **Sitemaps**.
 
 ---
 

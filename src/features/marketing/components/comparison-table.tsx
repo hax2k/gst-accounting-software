@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { CheckIcon, XIcon } from 'lucide-react'
 
 import {
@@ -8,8 +9,16 @@ import {
   TableHeader,
   TableRow,
 } from '#/components/ui/table.tsx'
+import type { AlternativeSlug } from '#/features/marketing/alternatives-content.ts'
 import { COMPARISON } from '#/features/marketing/landing-content.ts'
 import { cn } from '#/lib/utils.ts'
+
+const ALTERNATIVE_SLUG_BY_COLUMN: Partial<Record<string, AlternativeSlug>> = {
+  Tally: 'tally',
+  Busy: 'busy',
+  Vyapar: 'vyapar',
+  'Zoho Books': 'zoho-books',
+}
 
 type CellKind = 'yes' | 'no' | 'text'
 
@@ -81,6 +90,7 @@ export function ComparisonTable() {
               {COMPARISON.columns.map((column, index) => {
                 const isProduct = index === 1
                 const isFeature = index === 0
+                const alternativeSlug = ALTERNATIVE_SLUG_BY_COLUMN[column]
                 return (
                   <TableHead
                     key={column || 'feature'}
@@ -95,7 +105,17 @@ export function ComparisonTable() {
                         'min-w-32 text-center text-sm text-muted-foreground md:text-base',
                     )}
                   >
-                    {column}
+                    {alternativeSlug ? (
+                      <Link
+                        className="hover:text-foreground hover:underline"
+                        params={{ competitor: alternativeSlug }}
+                        to="/alternatives/$competitor"
+                      >
+                        {column}
+                      </Link>
+                    ) : (
+                      column
+                    )}
                   </TableHead>
                 )
               })}

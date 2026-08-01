@@ -4,8 +4,13 @@ import {
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { AppDevtools } from '../integrations/tanstack-devtools'
+import {
+  GoogleAnalyticsPageview,
+  buildGoogleAnalyticsScripts,
+} from '../integrations/google-analytics.tsx'
 import { Toaster } from '#/components/ui/sonner.tsx'
 import { TooltipProvider } from '#/components/ui/tooltip.tsx'
+import { env } from '#/env.ts'
 
 import appCss from '../styles.css?url'
 
@@ -33,6 +38,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         title: 'HisaabKro',
       },
+      ...(env.VITE_GOOGLE_SITE_VERIFICATION
+        ? [
+            {
+              name: 'google-site-verification',
+              content: env.VITE_GOOGLE_SITE_VERIFICATION,
+            },
+          ]
+        : []),
     ],
     links: [
       {
@@ -40,6 +53,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         href: appCss,
       },
     ],
+    scripts: buildGoogleAnalyticsScripts(),
   }),
   shellComponent: RootDocument,
 })
@@ -54,6 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <TooltipProvider>{children}</TooltipProvider>
         <Toaster richColors />
         <AppDevtools />
+        <GoogleAnalyticsPageview />
         <Scripts />
       </body>
     </html>

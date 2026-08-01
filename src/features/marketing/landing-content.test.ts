@@ -61,6 +61,7 @@ describe('landing content', () => {
       'components/landing-cta.tsx',
       'components/landing-footer.tsx',
       'components/product-preview.tsx',
+      'components/alternative-page.tsx',
     ]
 
     for (const file of files) {
