@@ -23,6 +23,7 @@ import { requireTrimmed, requireWorkspace } from '#/lib/form-validation.ts'
 import { parseBusyExport } from '#/features/imports/busy-format-parser.ts'
 import { parseCsvRows } from '#/features/imports/csv-parser.ts'
 import { useTRPC } from '#/integrations/trpc/react.ts'
+import { UploadIcon } from 'lucide-react'
 
 type ImportMode = 'parties' | 'stock' | 'items' | 'openingBalances'
 
