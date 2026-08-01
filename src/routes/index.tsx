@@ -4,6 +4,7 @@ import { LandingPage } from '#/features/marketing/components/landing-page.tsx'
 import {
   SITE,
   buildFaqJsonLd,
+  buildSocialImageMeta,
   buildSoftwareJsonLd,
 } from '#/features/marketing/landing-content.ts'
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute('/')({
         { property: 'og:title', content: SITE.title },
         { property: 'og:description', content: SITE.description },
         { property: 'og:site_name', content: SITE.name },
+        ...buildSocialImageMeta(),
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: SITE.title },
         { name: 'twitter:description', content: SITE.description },

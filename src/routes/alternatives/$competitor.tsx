@@ -8,7 +8,11 @@ import {
   buildAlternativeBreadcrumbJsonLd,
   buildAlternativeFaqJsonLd,
 } from '#/features/marketing/alternatives-content.ts'
-import { SITE, buildSoftwareJsonLd } from '#/features/marketing/landing-content.ts'
+import {
+  SITE,
+  buildSocialImageMeta,
+  buildSoftwareJsonLd,
+} from '#/features/marketing/landing-content.ts'
 
 function isAlternativeSlug(value: string): value is AlternativeSlug {
   return (ALTERNATIVE_SLUGS as ReadonlyArray<string>).includes(value)
@@ -33,6 +37,7 @@ export const Route = createFileRoute('/alternatives/$competitor')({
         { property: 'og:title', content: alternative.seoTitle },
         { property: 'og:description', content: alternative.seoDescription },
         { property: 'og:site_name', content: SITE.name },
+        ...buildSocialImageMeta(),
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: alternative.seoTitle },
         { name: 'twitter:description', content: alternative.seoDescription },

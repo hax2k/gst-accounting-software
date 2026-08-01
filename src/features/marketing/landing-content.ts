@@ -5,7 +5,20 @@ export const SITE = {
   title: 'HisaabKro — Free GST billing & accounting for Indian business',
   description:
     'Free GST billing, sales, purchases, inventory, party ledgers, and GST returns in one keyboard-first workspace. Proper double-entry books. No license fee.',
+  /** Absolute URL for Open Graph / Twitter cards (1200×630). */
+  ogImage: 'https://hisaabkro.in/og-card.png',
 } as const
+
+/** Shared Open Graph + Twitter image tags for marketing pages. */
+export function buildSocialImageMeta(imageUrl: string = SITE.ogImage) {
+  return [
+    { property: 'og:image', content: imageUrl },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { property: 'og:image:alt', content: SITE.title },
+    { name: 'twitter:image', content: imageUrl },
+  ] as const
+}
 
 export const NAV_LINKS = [
   { href: '#features', label: 'Features' },
@@ -226,5 +239,6 @@ export function buildSoftwareJsonLd() {
     },
     description: SITE.description,
     url: SITE.url,
+    image: SITE.ogImage,
   }
 }
