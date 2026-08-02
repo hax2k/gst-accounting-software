@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://hisaabkro.in/sitemap.xml
+Sitemap: https://hisaabkro.in/sitemap-index.xml
