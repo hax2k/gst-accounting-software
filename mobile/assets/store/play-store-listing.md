@@ -1,17 +1,17 @@
-# HisaabKro Play Store Listing Draft
+# Celestret Play Store Listing Draft
 
 App name:
-HisaabKro
+Celestret
 
 Short description:
 GST billing, khata, invoices, stock and payments for Indian businesses
 
 Full description draft:
-HisaabKro helps Indian small businesses manage daily hisaab from one mobile
+Celestret helps Indian small businesses manage daily hisaab from one mobile
 workspace. Create GST invoices, maintain khata ledgers, record purchases, track
 stock, manage payments, and review GST summaries without switching tools.
 
-Use HisaabKro for sales billing, purchase bills, customer receivables, supplier
+Use Celestret for sales billing, purchase bills, customer receivables, supplier
 payables, inventory movement, PDF invoice sharing, and day-to-day accounting
 control.
 
@@ -19,13 +19,13 @@ Primary category:
 Business
 
 Privacy policy URL:
-https://hisaabkro.in/privacy
+https://Celestret.in/privacy
 
 Account and data deletion URL:
-https://hisaabkro.in/data-deletion
+https://Celestret.in/data-deletion
 
 Financial features declaration:
-HisaabKro includes accounting, GST billing, khata/ledger, payments tracking,
+Celestret includes accounting, GST billing, khata/ledger, payments tracking,
 purchase, sales, inventory, and report workflows for Indian businesses. It does
 not provide loans, credit, investment advice, insurance, gambling, or trading.
 
@@ -37,7 +37,7 @@ Data Safety notes:
 - Photos/camera: used only when a user chooses to capture or attach bill images
   for purchase/OCR review.
 - Microphone/audio: not collected and the Android permission is blocked.
-- Data deletion: available through https://hisaabkro.in/data-deletion and from
+- Data deletion: available through https://Celestret.in/data-deletion and from
   the mobile Settings screen.
 
 Feature graphic:
@@ -65,10 +65,10 @@ Play-safe 1080x1920 crops:
 
 Alt text:
 
-1. HisaabKro dashboard with daily sales, GST summary, khata balances, and stock alerts.
-2. HisaabKro invoice entry showing customer, date, payment mode, items, and total amount.
-3. HisaabKro purchase and stock summary with supplier bills, inventory, and GST input.
-4. HisaabKro reports screen showing receivables, payments, GST, and PDF invoice preview.
+1. Celestret dashboard with daily sales, GST summary, khata balances, and stock alerts.
+2. Celestret invoice entry showing customer, date, payment mode, items, and total amount.
+3. Celestret purchase and stock summary with supplier bills, inventory, and GST input.
+4. Celestret reports screen showing receivables, payments, GST, and PDF invoice preview.
 
 Notes:
 

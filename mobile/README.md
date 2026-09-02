@@ -1,4 +1,4 @@
-# HisaabKro Mobile
+# Celestret Mobile
 
 Expo SDK 57 app sharing the web API via `@accounting/api-client`.
 
@@ -56,7 +56,7 @@ Sign in with the same account you use on the web app. You should land on the das
 
 ## Android emulator (standalone build)
 
-Use the **standalone debug build** (`com.hisaabkro.mobile`), not Expo Go. Expo Go on emulators often lags the project SDK and cannot load this app reliably.
+Use the **standalone debug build** (`com.Celestret.mobile`), not Expo Go. Expo Go on emulators often lags the project SDK and cannot load this app reliably.
 
 **One-time install (builds native APK):**
 
@@ -89,7 +89,7 @@ adb reverse tcp:3000 tcp:3000
 cd mobile
 export REACT_NATIVE_PACKAGER_HOSTNAME=10.0.2.2
 bunx expo start --lan --clear --port 8081
-adb shell am start -n com.hisaabkro.mobile/.MainActivity
+adb shell am start -n com.Celestret.mobile/.MainActivity
 ```
 
 Rebuild native code after dependency or plugin changes:
@@ -187,14 +187,14 @@ From the repo root, use the same commands with the `mobile:` prefix, for example
 The `preview` and `production` EAS profiles point at the production API:
 
 ```text
-EXPO_PUBLIC_API_URL=https://hisaabkro.in
+EXPO_PUBLIC_API_URL=https://Celestret.in
 ```
 
 Use `preview` for APK sharing and `production` for Play Store AAB releases.
 
 ## Auth
 
-Uses `@better-auth/expo` with scheme `hisaabkro://`. The web server trusts mobile origins (see `src/lib/auth-mobile-config.ts`).
+Uses `@better-auth/expo` with scheme `Celestret://`. The web server trusts mobile origins (see `src/lib/auth-mobile-config.ts`).
 
 - **Expo web** uses `credentials: 'omit'` for cross-origin auth to `localhost:3000`; the session token is stored in localStorage and sent to tRPC as `Authorization: Bearer <token>`.
 - **Expo Go** stores the session token in SecureStore and sends the same bearer header on tRPC requests.
@@ -215,5 +215,5 @@ Uses `@better-auth/expo` with scheme `hisaabkro://`. The web server trusts mobil
 
 - Native camera capture for purchase OCR (`expo-image-picker` camera)
 - SecureStore-backed session persistence (web uses localStorage instead)
-- Deep links via `hisaabkro://` scheme
+- Deep links via `Celestret://` scheme
 - EAS preview / native builds

@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { Animated, Easing, Pressable } from 'react-native'
 
-const mascotSource = require('@/assets/brand/hisaabkro-mascot.png')
+const mascotSource = require('@/assets/brand/Celestret-mascot.png')
 
-export function HisaabKroMascot() {
+export function CelestretMascot() {
   const float = useRef(new Animated.Value(0)).current
   const press = useRef(new Animated.Value(1)).current
 
@@ -54,7 +54,7 @@ export function HisaabKroMascot() {
   return (
     <Pressable
       accessibilityRole="imagebutton"
-      accessibilityLabel="HisaabKro helper"
+      accessibilityLabel="Celestret helper"
       onPress={handlePress}
     >
       <Animated.Image

@@ -72,7 +72,7 @@ export function AlternativePage({ slug }: { slug: AlternativeSlug }) {
                 </CardHeader>
                 <CardContent className="flex flex-col gap-1 text-sm">
                   <p className="font-medium text-foreground">
-                    {SITE.name}: {comparisonFact(rowLabel, 'HisaabKro')}
+                    {SITE.name}: {comparisonFact(rowLabel, 'Celestret')}
                   </p>
                   <p className="text-muted-foreground">
                     {alternative.name}: {comparisonFact(rowLabel, alternative.name)}

@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { HisaabKroMascot } from '@/components/brand/hisaabkro-mascot'
+import { CelestretMascot } from '@/components/brand/Celestret-mascot'
 import { pagePaddingHorizontal } from '@/lib/theme'
 
 import { KeyboardAvoidingView, ScrollView, Text, View } from '@/tw'
@@ -28,7 +28,7 @@ export function AuthShell({
       style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
     >
       <View className="items-center gap-2">
-        <HisaabKroMascot />
+        <CelestretMascot />
         <Text className="text-center text-3xl font-bold text-foreground">
           {title}
         </Text>

@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://hisaabkro.in"
+        "EXPO_PUBLIC_API_URL": "https://Celestret.in"
       },
       "android": {
         "buildType": "apk"
@@ -20,7 +20,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://hisaabkro.in"
+        "EXPO_PUBLIC_API_URL": "https://Celestret.in"
       }
     }
   },

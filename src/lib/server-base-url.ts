@@ -31,7 +31,7 @@ function productionBaseUrl() {
 
   if (!configured) {
     throw new Error(
-      'BETTER_AUTH_URL must be set in production (e.g. https://hisaabkro.in)',
+      'BETTER_AUTH_URL must be set in production (e.g. https://Celestret.in)',
     )
   }
 

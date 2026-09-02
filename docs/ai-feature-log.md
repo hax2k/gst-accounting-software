@@ -1,6 +1,6 @@
 # AI Feature Log
 
-This log tracks planned, active, and shipped AI-related work in HisaabKro.
+This log tracks planned, active, and shipped AI-related work in Celestret.
 
 ## Status Legend
 

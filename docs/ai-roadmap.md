@@ -1,6 +1,6 @@
-# HisaabKro AI Roadmap
+# Celestret AI Roadmap
 
-HisaabKro AI is planned as assistive automation for GST billing, khata, inventory, and accounting workflows. The goal is to reduce manual work while keeping every accounting-impacting action reviewable by the user.
+Celestret AI is planned as assistive automation for GST billing, khata, inventory, and accounting workflows. The goal is to reduce manual work while keeping every accounting-impacting action reviewable by the user.
 
 ## Product Direction
 

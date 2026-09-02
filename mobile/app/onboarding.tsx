@@ -33,7 +33,7 @@ export default function OnboardingScreen() {
 
   return (
     <AuthShell
-      title="Welcome to HisaabKro"
+      title="Welcome to Celestret"
       subtitle="Create your company workspace and start GST-ready books."
     >
       <FormField

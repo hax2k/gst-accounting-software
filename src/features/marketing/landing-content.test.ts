@@ -35,7 +35,7 @@ describe('landing content', () => {
   })
 
   test('OG card URL is absolute and points at the public asset', () => {
-    expect(SITE.ogImage).toBe('https://hisaabkro.in/og-card.png')
+    expect(SITE.ogImage).toBe('https://Celestret.in/og-card.png')
   })
 
   test('primary CTA targets signup', () => {

@@ -35,7 +35,7 @@ export function InvoicePreview({ className }: { className?: string }) {
   return (
     <BrowserChrome
       className={className}
-      title="hisaabkro.in/app/sales/new"
+      title="Celestret.in/app/sales/new"
     >
       <div
         aria-hidden="true"
@@ -107,7 +107,7 @@ export function ReportsPreview({ className }: { className?: string }) {
   return (
     <BrowserChrome
       className={className}
-      title="hisaabkro.in/app/reports"
+      title="Celestret.in/app/reports"
     >
       <div
         aria-hidden="true"
@@ -150,7 +150,7 @@ export function VoucherEntryPreview({ className }: { className?: string }) {
   return (
     <BrowserChrome
       className={className}
-      title="hisaabkro.in/app/sales/new · voucher entry"
+      title="Celestret.in/app/sales/new · voucher entry"
     >
       <div
         aria-hidden="true"

@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "HisaabKro",
-    "slug": "hisaabkro",
+    "name": "Celestret",
+    "slug": "Celestret",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "hisaabkro",
+    "scheme": "Celestret",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/images/icon.png",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hisaabkro.mobile"
+      "bundleIdentifier": "com.Celestret.mobile"
     },
     "android": {
-      "package": "com.hisaabkro.mobile",
+      "package": "com.Celestret.mobile",
       "softwareKeyboardLayoutMode": "resize",
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO",
@@ -46,8 +46,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow HisaabKro to attach bill photos for OCR review.",
-          "cameraPermission": "Allow HisaabKro to capture purchase bills."
+          "photosPermission": "Allow Celestret to attach bill photos for OCR review.",
+          "cameraPermission": "Allow Celestret to capture purchase bills."
         }
       ],
       "expo-sharing"

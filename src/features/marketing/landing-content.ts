@@ -1,12 +1,12 @@
 export const SITE = {
-  name: 'HisaabKro',
-  url: 'https://hisaabkro.in',
+  name: 'Celestret',
+  url: 'https://Celestret.in',
   githubUrl: 'https://github.com/shabanraza/gst-accounting-software',
-  title: 'HisaabKro — Free GST billing & accounting for Indian business',
+  title: 'Celestret — Free GST billing & accounting for Indian business',
   description:
     'Free GST billing, sales, purchases, inventory, party ledgers, and GST returns in one keyboard-first workspace. Proper double-entry books. No license fee.',
   /** Absolute URL for Open Graph / Twitter cards (1200×630). */
-  ogImage: 'https://hisaabkro.in/og-card.png',
+  ogImage: 'https://Celestret.in/og-card.png',
 } as const
 
 /** Shared Open Graph + Twitter image tags for marketing pages. */
@@ -116,10 +116,10 @@ export const FEATURES = {
 
 export const COMPARISON = {
   id: 'compare',
-  title: 'How HisaabKro compares',
+  title: 'How Celestret compares',
   subtitle:
     'Stable facts only — pricing model and how the software is delivered. Feature checklists go stale; these do not.',
-  columns: ['', 'HisaabKro', 'Tally', 'Busy', 'Vyapar', 'Zoho Books'] as const,
+  columns: ['', 'Celestret', 'Tally', 'Busy', 'Vyapar', 'Zoho Books'] as const,
   rows: [
     {
       label: 'Runs in a browser',
@@ -171,7 +171,7 @@ export const FAQ = {
   title: 'Questions worth asking',
   items: [
     {
-      question: 'Is HisaabKro really free?',
+      question: 'Is Celestret really free?',
       answer:
         'Yes. The software is MIT-licensed open source. There is no license fee and no credit card required to sign up for the hosted app. You can also self-host on Cloudflare Workers and Neon.',
     },
@@ -198,7 +198,7 @@ export const FAQ = {
     {
       question: 'Do I still need a CA?',
       answer:
-        'For filing strategy, notices, and advisory — yes, a CA remains valuable. HisaabKro keeps books, invoices, and GST reports organised so your CA works from clean data rather than chasing WhatsApp photos.',
+        'For filing strategy, notices, and advisory — yes, a CA remains valuable. Celestret keeps books, invoices, and GST reports organised so your CA works from clean data rather than chasing WhatsApp photos.',
     },
   ],
 } as const

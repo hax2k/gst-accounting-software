@@ -1,6 +1,6 @@
 # AI Safety Principles
 
-HisaabKro handles accounting, GST, inventory, and business records. AI features must improve speed without silently creating financial mistakes.
+Celestret handles accounting, GST, inventory, and business records. AI features must improve speed without silently creating financial mistakes.
 
 ## Core Principles
 

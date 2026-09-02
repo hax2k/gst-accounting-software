@@ -1,4 +1,4 @@
-export const MOBILE_AUTH_SCHEME = 'hisaabkro'
+export const MOBILE_AUTH_SCHEME = 'Celestret'
 
 export function getMobileAuthScheme() {
   return MOBILE_AUTH_SCHEME

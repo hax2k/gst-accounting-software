@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 REPORT = Path(__file__).resolve().parents[2] / "e2e-reports"
-PKG = "com.hisaabkro.mobile"
+PKG = "com.Celestret.mobile"
 
 
 def adb(*args: str) -> subprocess.CompletedProcess[str]:
@@ -23,7 +23,7 @@ def deep_link(path: str) -> None:
         "-a",
         "android.intent.action.VIEW",
         "-d",
-        f"hisaabkro://{path}",
+        f"Celestret://{path}",
         "-n",
         f"{PKG}/.MainActivity",
     )

@@ -27,12 +27,12 @@ function DataDeletionRoute() {
     <main className="min-h-screen bg-background px-4 py-10 text-foreground">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-muted-foreground">HisaabKro</p>
+          <p className="text-sm font-medium text-muted-foreground">Celestret</p>
           <h1 className="text-3xl font-semibold tracking-tight">
             Data Deletion
           </h1>
           <p className="text-sm text-muted-foreground">
-            Request deletion of your HisaabKro account and associated business
+            Request deletion of your Celestret account and associated business
             data.
           </p>
         </div>
@@ -46,15 +46,15 @@ function DataDeletionRoute() {
               Send a request from your registered email address to{' '}
               <a
                 className="font-medium text-foreground underline-offset-4 hover:underline"
-                href="mailto:privacy@hisaabkro.in?subject=HisaabKro%20account%20deletion%20request"
+                href="mailto:privacy@Celestret.in?subject=Celestret%20account%20deletion%20request"
               >
-                privacy@hisaabkro.in
+                privacy@Celestret.in
               </a>
               . Include your account email and company name so we can verify the
               workspace.
             </p>
             <p>
-              You can also open this page from the HisaabKro mobile app under
+              You can also open this page from the Celestret mobile app under
               Settings.
             </p>
           </CardContent>
@@ -88,9 +88,9 @@ function DataDeletionRoute() {
             For support, email{' '}
             <a
               className="font-medium text-foreground underline-offset-4 hover:underline"
-              href="mailto:support@hisaabkro.in"
+              href="mailto:support@Celestret.in"
             >
-              support@hisaabkro.in
+              support@Celestret.in
             </a>{' '}
             or read the{' '}
             <Link

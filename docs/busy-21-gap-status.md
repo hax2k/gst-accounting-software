@@ -1,6 +1,6 @@
 # BUSY 21 Feature Gap — Status (Jul 2026)
 
-Living status vs [BUSY 21](https://busy.in/) wholesale/trading features, tracking which of them HisaabKro already covers and which are still open. Useful if you are looking for something meaningful to build — start from the "Still open" list rather than rebuilding what is marked Done.
+Living status vs [BUSY 21](https://busy.in/) wholesale/trading features, tracking which of them Celestret already covers and which are still open. Useful if you are looking for something meaningful to build — start from the "Still open" list rather than rebuilding what is marked Done.
 
 ## Parity summary
 

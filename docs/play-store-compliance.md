@@ -1,11 +1,11 @@
-# HisaabKro Play Store Compliance Notes
+# Celestret Play Store Compliance Notes
 
 Last updated: July 18, 2026
 
 ## Current Store URLs
 
-- Privacy policy: `https://hisaabkro.in/privacy`
-- Account/data deletion: `https://hisaabkro.in/data-deletion`
+- Privacy policy: `https://Celestret.in/privacy`
+- Account/data deletion: `https://Celestret.in/data-deletion`
 
 ## Android Permissions
 
@@ -14,9 +14,9 @@ features.
 
 - Allowed: `INTERNET`, `VIBRATE`, camera/photo access through Expo Image Picker
   when users capture or attach purchase bills.
-- Blocked: `android.permission.RECORD_AUDIO` because HisaabKro has no
+- Blocked: `android.permission.RECORD_AUDIO` because Celestret has no
   microphone feature.
-- Blocked: `android.permission.SYSTEM_ALERT_WINDOW` because HisaabKro has no
+- Blocked: `android.permission.SYSTEM_ALERT_WINDOW` because Celestret has no
   production overlay feature.
 
 ## Data Safety Draft
@@ -36,7 +36,7 @@ Declare no collection for:
 
 ## Financial Features Draft
 
-HisaabKro is a business accounting, GST billing, khata/ledger, inventory,
+Celestret is a business accounting, GST billing, khata/ledger, inventory,
 payments tracking, purchase, sales, and reporting app.
 
 It does not provide loans, credit, investments, insurance, trading, gambling,
@@ -44,7 +44,7 @@ or wallet/banking services.
 
 ## Before Production Submission
 
-- Ensure `privacy@hisaabkro.in` and `support@hisaabkro.in` route to a monitored
+- Ensure `privacy@Celestret.in` and `support@Celestret.in` route to a monitored
   inbox.
 - Complete Play Console App Content, Data Safety, Financial Features, target
   audience, ads, and content rating sections.

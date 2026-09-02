@@ -32,7 +32,7 @@ describe('alternatives content', () => {
   })
 
   test('comparisonFact reads the same table shown on the homepage', () => {
-    expect(comparisonFact('Pricing model', 'HisaabKro')).toBe(
+    expect(comparisonFact('Pricing model', 'Celestret')).toBe(
       'Free & open source',
     )
     expect(comparisonFact('Pricing model', 'Tally')).toBe('Paid license')

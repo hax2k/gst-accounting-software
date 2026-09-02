@@ -28,11 +28,11 @@ describe('server base url', () => {
     vi.stubEnv('PROD', true)
     vi.stubEnv(
       'BETTER_AUTH_URL',
-      'https://hisaabkro.in/',
+      'https://Celestret.in/',
     )
 
-    expect(getServerBaseUrl()).toBe('https://hisaabkro.in')
-    expect(getTrpcUrl()).toBe('https://hisaabkro.in/api/trpc')
+    expect(getServerBaseUrl()).toBe('https://Celestret.in')
+    expect(getTrpcUrl()).toBe('https://Celestret.in/api/trpc')
   })
 
   test('rejects localhost BETTER_AUTH_URL in production', () => {

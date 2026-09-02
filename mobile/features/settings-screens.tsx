@@ -11,8 +11,8 @@ import { trpcClient } from '@/lib/trpc-client'
 import { View } from '@/tw'
 import { useWorkspace } from '@/lib/workspace'
 
-const PRIVACY_POLICY_URL = 'https://hisaabkro.in/privacy'
-const DATA_DELETION_URL = 'https://hisaabkro.in/data-deletion'
+const PRIVACY_POLICY_URL = 'https://Celestret.in/privacy'
+const DATA_DELETION_URL = 'https://Celestret.in/data-deletion'
 
 export function ChartOfAccountsScreen() {
   const { companyId } = useWorkspace()
@@ -91,7 +91,7 @@ export function SettingsScreen() {
         />
         <CardRow
           title="Privacy policy"
-          subtitle="How HisaabKro handles account and business data"
+          subtitle="How Celestret handles account and business data"
           onPress={() => void Linking.openURL(PRIVACY_POLICY_URL)}
         />
         <CardRow

@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://hisaabkro.in/sitemap.xml
-Sitemap: https://hisaabkro.in/sitemap-index.xml
+Sitemap: https://Celestret.in/sitemap.xml
+Sitemap: https://Celestret.in/sitemap-index.xml

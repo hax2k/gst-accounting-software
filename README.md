@@ -1,6 +1,6 @@
-# HisaabKro — GST Billing & Khata App
+# Celestret — GST Billing & Khata App
 
-HisaabKro is a modern **GST billing, khata ledger, and accounting app** for Indian businesses — sales invoicing, purchase bills, inventory, party ledger, payments, and **GST compliance** in one web and mobile workspace.
+Celestret is a modern **GST billing, khata ledger, and accounting app** for Indian businesses — sales invoicing, purchase bills, inventory, party ledger, payments, and **GST compliance** in one web and mobile workspace.
 
 Looking for a **Busy accounting alternative**, **Zoho Books alternative**, or **Tally-style GST software** without license fees? This project is built for that.
 
@@ -299,7 +299,7 @@ client-side router.
 
 ### Google Search Console
 
-1. Add the property for `https://hisaabkro.in` at
+1. Add the property for `https://Celestret.in` at
    [search.google.com/search-console](https://search.google.com/search-console).
 2. Choose the **HTML tag** verification method and copy the `content="..."`
    value (not the whole tag).
@@ -309,7 +309,7 @@ client-side router.
    ```bash
    VITE_GOOGLE_SITE_VERIFICATION=your-verification-value bun run build
    ```
-4. Once verified, submit `https://hisaabkro.in/sitemap.xml` under **Sitemaps**.
+4. Once verified, submit `https://Celestret.in/sitemap.xml` under **Sitemaps**.
 
 ---
 

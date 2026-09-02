@@ -14,8 +14,8 @@ import {
   requireTrpcAuthReady,
 } from '@/lib/trpc-auth'
 
-const PRIVACY_POLICY_URL = 'https://hisaabkro.in/privacy'
-const DATA_DELETION_URL = 'https://hisaabkro.in/data-deletion'
+const PRIVACY_POLICY_URL = 'https://Celestret.in/privacy'
+const DATA_DELETION_URL = 'https://Celestret.in/data-deletion'
 
 export default function SignupScreen() {
   const router = useRouter()

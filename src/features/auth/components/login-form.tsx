@@ -43,7 +43,7 @@ export function LoginForm() {
 
   return (
     <AuthPage
-      description="Access your HisaabKro workspace and company ledgers."
+      description="Access your Celestret workspace and company ledgers."
       title="Sign in"
     >
       <AuthForm onSubmit={(event) => void handleSubmit(event)}>

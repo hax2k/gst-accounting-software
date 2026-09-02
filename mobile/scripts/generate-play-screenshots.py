@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 STORE = ROOT / "assets" / "store"
 OUT = STORE / "screenshots"
 REAL = OUT / "real-captures-v2"
-MASCOT = ROOT / "assets" / "brand" / "hisaabkro-mascot.png"
+MASCOT = ROOT / "assets" / "brand" / "Celestret-mascot.png"
 ICON = STORE / "play-icon-512.png"
 
 W, H = 1080, 1920

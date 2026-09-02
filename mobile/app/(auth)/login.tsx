@@ -14,8 +14,8 @@ import {
   requireTrpcAuthReady,
 } from '@/lib/trpc-auth'
 
-const PRIVACY_POLICY_URL = 'https://hisaabkro.in/privacy'
-const DATA_DELETION_URL = 'https://hisaabkro.in/data-deletion'
+const PRIVACY_POLICY_URL = 'https://Celestret.in/privacy'
+const DATA_DELETION_URL = 'https://Celestret.in/data-deletion'
 
 export default function LoginScreen() {
   const router = useRouter()
@@ -52,7 +52,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <AuthShell title="HisaabKro" subtitle="Sign in to your workspace">
+    <AuthShell title="Celestret" subtitle="Sign in to your workspace">
       <FormField
         autoCapitalize="none"
         keyboardType="email-address"

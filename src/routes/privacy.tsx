@@ -29,7 +29,7 @@ function PrivacyRoute() {
     <main className="min-h-screen bg-background px-4 py-10 text-foreground">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-muted-foreground">HisaabKro</p>
+          <p className="text-sm font-medium text-muted-foreground">Celestret</p>
           <h1 className="text-3xl font-semibold tracking-tight">
             Privacy Policy
           </h1>
@@ -44,7 +44,7 @@ function PrivacyRoute() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
             <p>
-              HisaabKro collects account details such as name, email address,
+              Celestret collects account details such as name, email address,
               login session data, and business workspace information needed to
               run GST billing, khata, inventory, purchases, and reports.
             </p>
@@ -68,7 +68,7 @@ function PrivacyRoute() {
               attachments, and maintain security and reliability.
             </p>
             <p>
-              HisaabKro does not sell user data. Data may be processed by
+              Celestret does not sell user data. Data may be processed by
               service providers used for hosting, database, authentication,
               email delivery, storage, analytics, or OCR where required to run
               the service. We use Google Analytics to understand aggregate
@@ -98,9 +98,9 @@ function PrivacyRoute() {
               or email{' '}
               <a
                 className="font-medium text-foreground underline-offset-4 hover:underline"
-                href="mailto:privacy@hisaabkro.in"
+                href="mailto:privacy@Celestret.in"
               >
-                privacy@hisaabkro.in
+                privacy@Celestret.in
               </a>
               .
             </p>
@@ -115,9 +115,9 @@ function PrivacyRoute() {
             For privacy questions, contact{' '}
             <a
               className="font-medium text-foreground underline-offset-4 hover:underline"
-              href="mailto:privacy@hisaabkro.in"
+              href="mailto:privacy@Celestret.in"
             >
-              privacy@hisaabkro.in
+              privacy@Celestret.in
             </a>
             .
           </CardContent>
